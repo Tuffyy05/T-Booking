@@ -1,0 +1,82 @@
+﻿@model IEnumerable<WebApplication1.Models.Booking>
+@{
+    ViewData["Title"] = "Duyệt Đơn";
+}
+
+<div class="container-fluid mt-2">
+    <h3 class="fw-bold text-primary mb-4">
+        <i class="fa-solid fa-clipboard-list me-2"></i>Quản lý & Duyệt Đơn
+    </h3>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4 py-3 text-uppercase fs-7 text-muted">Người đặt</th>
+                            <th class="py-3 text-uppercase fs-7 text-muted">Phòng / Thiết bị</th>
+                            <th class="py-3 text-uppercase fs-7 text-muted">Thời gian sử dụng</th>
+                            <th class="py-3 text-center text-uppercase fs-7 text-muted">Trạng thái</th>
+                            <th class="py-3 text-center text-uppercase fs-7 text-muted">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="px-4 fw-bold text-primary">
+                                    <i class="fa-solid fa-circle-user me-2"></i>@item.User?.Username
+                                </td>
+                                <td class="fw-bold text-dark fs-5">@item.Room?.Name</td>
+                                <td>
+                                    <div class="text-success fw-medium mb-1">
+                                        <i class="fa-regular fa-clock me-1"></i> Bắt đầu: @item.StartTime.ToString("HH:mm - dd/MM/yyyy")
+                                    </div>
+                                    <div class="text-danger fw-medium">
+                                        <i class="fa-solid fa-flag-checkered me-1"></i> Kết thúc: @item.EndTime.ToString("HH:mm - dd/MM/yyyy")
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (item.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success rounded-pill px-3 py-2"><i class="fa-solid fa-check me-1"></i>Đã duyệt</span>
+                                    }
+                                    else if (item.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-xmark me-1"></i>Từ chối</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-hourglass-half me-1"></i>Chờ duyệt</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.Status == "Pending")
+                                    {
+                                        <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm me-1" title="Duyệt">
+                                                <i class="fa-solid fa-check"></i> Duyệt
+                                            </button>
+                                        </form>
+                                        <form asp-action="Reject" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm" title="Từ chối">
+                                                <i class="fa-solid fa-xmark"></i> Từ chối
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic fs-7">
+                                            <i class="fa-solid fa-check-double me-1"></i>Đã xử lý
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

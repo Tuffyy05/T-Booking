@@ -1,0 +1,174 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<style>
+    body {
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f0fa 100%);
+    }
+
+    .auth-card {
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        border: none;
+        transform: translateY(20px);
+        opacity: 0;
+        animation: fadeUp 0.6s ease-out forwards;
+    }
+
+    .auth-image-side {
+        background: linear-gradient(135deg, #0d6efd 0%, #00449e 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .auth-image-side::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -50px;
+            left: -50px;
+        }
+
+        .auth-image-side::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            bottom: -50px;
+            right: -30px;
+        }
+
+    .auth-form-side {
+        padding: 4rem 3rem;
+        background-color: white;
+    }
+
+    .form-floating > .form-control {
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+        padding-left: 1.5rem;
+    }
+
+        .form-floating > .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+    .btn-auth {
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3);
+        }
+
+    /* CSS cho icon Hiện/Ẩn mật khẩu */
+    .password-toggle-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+        z-index: 10;
+        padding: 5px;
+    }
+
+        .password-toggle-icon:hover {
+            color: #0d6efd;
+        }
+
+    @@keyframes fadeUp {
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card auth-card d-flex flex-row">
+                <div class="row g-0 w-100">
+                    <div class="col-md-5 d-none d-md-flex auth-image-side text-center">
+                        <i class="fa-solid fa-building-user mb-4" style="font-size: 5rem; z-index: 1;"></i>
+                        <h3 class="fw-bold mb-3" style="z-index: 1;">T-Booking</h3>
+                        <p class="mb-0" style="z-index: 1; opacity: 0.9;">Hệ thống quản lý đặt phòng và thiết bị tiện lợi, nhanh chóng nhất.</p>
+                    </div>
+
+                    <div class="col-md-7 auth-form-side">
+                        <div class="text-center mb-5">
+                            <h2 class="fw-bold text-dark">Chào mừng trở lại! 👋</h2>
+                            <p class="text-muted">Vui lòng đăng nhập để tiếp tục</p>
+                        </div>
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="alert alert-danger" style="border-radius: 10px;">@TempData["Error"]</div>
+                        }
+
+                        <form asp-action="Login" method="post">
+                            <div class="form-floating mb-4">
+                                <input type="text" class="form-control fw-medium" id="usernameInput" name="username" placeholder="Email / Tên đăng nhập" required>
+                                <label for="usernameInput" class="text-muted"><i class="fa-solid fa-user me-2"></i>Email hoặc Tên đăng nhập</label>
+                            </div>
+
+                            <!-- Thêm thẻ div bao bọc position-relative và icon mắt kính -->
+                            <div class="form-floating mb-4 position-relative">
+                                <input type="password" class="form-control fw-medium pe-5" id="passwordInput" name="password" placeholder="Mật khẩu" required>
+                                <label for="passwordInput" class="text-muted"><i class="fa-solid fa-lock me-2"></i>Mật khẩu</label>
+                                <i class="fa-solid fa-eye password-toggle-icon" onclick="togglePassword('passwordInput', this)"></i>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-auth mt-2">
+                                Đăng nhập
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <span class="text-muted">Chưa có tài khoản?</span>
+                            <a asp-action="Register" class="text-primary fw-bold ms-1 text-decoration-none">Tạo tài khoản mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Hàm Ẩn/Hiện mật khẩu
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElement.classList.remove('fa-eye');
+                iconElement.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElement.classList.remove('fa-eye-slash');
+                iconElement.classList.add('fa-eye');
+            }
+        }
+    </script>
+}

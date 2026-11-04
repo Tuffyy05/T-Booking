@@ -1,0 +1,223 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hệ thống Đặt Phòng</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .navbar {
+            padding: 15px 0;
+        }
+
+        .nav-link:hover {
+            color: #007bff !important;
+        }
+
+        .btn-register {
+            background-color: #007bff;
+            color: white;
+            border-radius: 25px;
+            padding: 8px 20px;
+            transition: 0.3s;
+        }
+
+            .btn-register:hover {
+                background-color: #0056b3;
+                color: white;
+            }
+
+        /* CSS TỐI ƯU CHO SIDEBAR ADMIN */
+        .admin-sidebar {
+            min-height: 80vh;
+        }
+
+            .admin-sidebar .nav-link {
+                color: #495057;
+                border-radius: 10px;
+                transition: all 0.3s ease;
+                font-size: 1.15rem;
+                padding: 14px 20px !important;
+                margin-bottom: 12px;
+            }
+
+                .admin-sidebar .nav-link i {
+                    font-size: 1.3rem;
+                    transition: transform 0.3s ease;
+                }
+
+                .admin-sidebar .nav-link:hover, .admin-sidebar .nav-link.active {
+                    background-color: #f0f7ff;
+                    color: #0d6efd !important;
+                    transform: translateX(8px);
+                    font-weight: 700 !important;
+                }
+
+                    .admin-sidebar .nav-link:hover i {
+                        transform: scale(1.1);
+                    }
+    </style>
+</head>
+<body class="bg-light">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow sticky-top mb-4">
+            <div class="container-fluid px-4">
+                @if (User.IsInRole("Admin"))
+                {
+                    <a class="navbar-brand fw-bold text-primary fs-4" asp-area="" asp-controller="Bookings" asp-action="AdminDashboard">
+                        <i class="fa-solid fa-building-circle-check me-2"></i>T-Booking Admin
+                    </a>
+                }
+                else
+                {
+                    <a class="navbar-brand fw-bold text-primary fs-4" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-building-circle-check me-2"></i>T-Booking
+                    </a>
+                }
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 ms-4">
+                        @if (!User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item me-3">
+                                <a class="nav-link text-dark fw-medium" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                            </li>
+                        }
+                        <li class="nav-item me-3">
+                            <a class="nav-link text-primary fw-bold" asp-controller="Bookings" asp-action="Calendar">
+                                <i class="fa-regular fa-calendar-days me-1"></i>Lịch Phòng
+                            </a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item me-3">
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <span class="nav-link fw-bold text-dark border px-3 rounded-pill bg-light shadow-sm">
+                                        <i class="fa-solid fa-user-shield text-primary me-1 fs-5 align-middle"></i>
+                                        @User.Identity.Name
+                                    </span>
+                                }
+                                else
+                                {
+                                    <a class="nav-link fw-bold text-dark btn btn-light px-3 shadow-sm border" style="border-radius: 20px;" asp-controller="Bookings" asp-action="Dashboard">
+                                        <i class="fa-solid fa-user-circle text-primary me-1 fs-5 align-middle"></i>
+                                        @User.Identity.Name
+                                    </a>
+                                }
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold btn btn-outline-danger btn-sm px-3" style="border-radius: 20px;" asp-controller="Account" asp-action="Logout">
+                                    <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item me-3"><a class="nav-link text-dark fw-bold" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
+                            <li class="nav-item"><a class="nav-link fw-bold btn-register" asp-controller="Account" asp-action="Register">Đăng ký</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="container-fluid px-4 pb-5">
+            <div class="row">
+                <!-- SIDEBAR BÊN TRÁI -->
+                <div class="col-lg-2 col-md-3 mb-4">
+                    <nav class="bg-white shadow-sm rounded-4 p-4 admin-sidebar h-100">
+                        <h6 class="text-uppercase text-muted fw-bold mb-4 px-2 fs-6" style="letter-spacing: 1px;">Danh mục quản lý</h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-dark" asp-controller="Bookings" asp-action="AdminDashboard">
+                                    <i class="fa-solid fa-chart-pie me-3 text-center text-primary" style="width: 25px;"></i>Thống kê
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-dark" asp-controller="Rooms" asp-action="Index">
+                                    <i class="fa-solid fa-layer-group me-3 text-center text-primary" style="width: 25px;"></i>Quản lý Phòng
+                                </a>
+                            </li>
+                            <!-- ĐÃ THÊM MỤC QUẢN LÝ THIẾT BỊ VÀO ĐÂY -->
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-dark" asp-controller="Facilities" asp-action="Index">
+                                    <i class="fa-solid fa-plug me-3 text-center text-warning" style="width: 25px;"></i>Quản lý Thiết bị
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-dark" asp-controller="Bookings" asp-action="ManageBookings">
+                                    <i class="fa-solid fa-clipboard-check me-3 text-center text-danger" style="width: 25px;"></i>Duyệt Đơn
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- NỘI DUNG BÊN PHẢI -->
+                <main class="col-lg-10 col-md-9 px-md-4">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px; border-left: 5px solid #198754;">
+                            <i class="fa-solid fa-circle-check me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Success"]</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px; border-left: 5px solid #dc3545;">
+                            <i class="fa-solid fa-triangle-exclamation me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Error"]</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container pb-5">
+            <main role="main">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm mt-3" role="alert" style="border-radius: 10px; border-left: 5px solid #198754;">
+                        <i class="fa-solid fa-circle-check me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Success"]</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mt-3" role="alert" style="border-radius: 10px; border-left: 5px solid #dc3545;">
+                        <i class="fa-solid fa-triangle-exclamation me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Error"]</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    }
+
+    <footer class="border-top footer text-muted bg-white mt-auto py-4">
+        <div class="container text-center">&copy; 2026 - T-Booking System</div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,38 @@
+﻿html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Ngăn chặn hành vi bôi đen văn bản trên toàn bộ trang web */
+body {
+    -webkit-user-select: none; /* Dành cho Chrome, Safari, Opera */
+    -moz-user-select: none; /* Dành cho Firefox */
+    -ms-user-select: none; /* Dành cho Edge/IE */
+    user-select: none; /* Chuẩn chung */
+}
+
+/* Kéo lại quyền bôi đen/copy nội dung dành riêng cho các ô nhập liệu */
+input, textarea, select {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}

@@ -1,0 +1,27 @@
+﻿@model WebApplication1.Models.Room
+
+@{
+    ViewData["Title"] = "Xóa phòng";
+}
+
+<h2 class="mt-4 text-danger">Xác nhận xóa phòng</h2>
+<h4 class="mb-4">Bạn có chắc chắn muốn xóa phòng này khỏi hệ thống không? Dữ liệu không thể khôi phục!</h4>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">Tên phòng</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Sức chứa</dt>
+        <dd class="col-sm-9">@Model.Capacity người</dd>
+
+        <dt class="col-sm-3">Loại phòng</dt>
+        <dd class="col-sm-9">@Model.RoomType</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
+    </form>
+</div>

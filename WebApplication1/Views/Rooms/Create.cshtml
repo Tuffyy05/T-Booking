@@ -1,0 +1,48 @@
+﻿@model WebApplication1.Models.Room
+
+@{
+    ViewData["Title"] = "Thêm phòng mới";
+}
+
+<h2 class="mt-4 mb-4">Thêm phòng học / Thiết bị mới</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create" method="post">
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Tên phòng <span class="text-danger">*</span></label>
+                <input asp-for="Name" class="form-control" placeholder="Ví dụ: Lab 01" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Capacity" class="form-label">Sức chứa (Số người) <span class="text-danger">*</span></label>
+                <input asp-for="Capacity" class="form-control" type="number" min="1" />
+                <span asp-validation-for="Capacity" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RoomType" class="form-label">Loại phòng <span class="text-danger">*</span></label>
+                <select asp-for="RoomType" class="form-select">
+                    <option value="">-- Chọn loại phòng --</option>
+                    <option value="Lab">Phòng Thực hành (Lab)</option>
+                    <option value="Meeting">Phòng Họp</option>
+                    <option value="Hall">Hội trường</option>
+                </select>
+                <span asp-validation-for="RoomType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 mt-4">
+                <button type="submit" class="btn btn-success">Lưu dữ liệu</button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">Quay lại danh sách</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

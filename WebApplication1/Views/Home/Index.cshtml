@@ -1,0 +1,381 @@
+﻿@model IEnumerable<WebApplication1.Models.Room>
+@{
+    ViewData["Title"] = "Trang chủ";
+    bool isFiltered = !string.IsNullOrEmpty(ViewBag.CurrentFilter) ||
+                      !string.IsNullOrEmpty(ViewBag.CurrentRoomType) ||
+                      ViewBag.CurrentMinCapacity != null;
+}
+
+<style>
+    .hero-banner {
+        background: linear-gradient(135deg, #0d6efd 0%, #00449e 100%);
+        border-radius: 24px;
+        padding: 4rem 3rem;
+        color: white;
+        margin-top: 1rem;
+        box-shadow: 0 15px 30px rgba(13, 110, 253, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            top: -150px;
+            right: -100px;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .feature-card {
+        border: none;
+        border-radius: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background-color: #ffffff;
+        border: 1px solid #f0f0f0;
+        height: 100%;
+        padding: 2.5rem 1.5rem;
+    }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+            border-color: #e9ecef;
+        }
+
+    .icon-box {
+        width: 75px;
+        height: 75px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .room-card {
+        border-radius: 20px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    }
+
+        .room-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(13, 110, 253, 0.1);
+            border-color: #0d6efd;
+        }
+
+    .room-cover {
+        height: 180px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+    }
+
+    .room-card:hover .room-cover {
+        background: linear-gradient(135deg, #e6f0fa 0%, #cfe2ff 100%);
+        color: #0d6efd;
+    }
+
+    .room-icon {
+        font-size: 4rem;
+        transition: transform 0.3s ease;
+    }
+
+    .room-card:hover .room-icon {
+        transform: scale(1.1);
+    }
+
+    .btn-book {
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 0.7rem;
+    }
+
+    /* CSS cho icon list ngang */
+    .icon-box-sm {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    /* CSS cho đường line nối các bước */
+    .step-line {
+        position: relative;
+    }
+
+        .step-line::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: #dee2e6;
+            z-index: 0;
+        }
+
+        .step-line:last-child::after {
+            display: none;
+        }
+
+    .step-icon {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+
+<div class="container mb-5">
+
+    <!-- PHẦN 1: BANNER HERO -->
+    <div class="hero-banner mb-5">
+        <div class="hero-content row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="fw-bold mb-3" style="font-size: 2.8rem;">Hệ thống Đặt Phòng T-Booking</h1>
+                <p class="fs-5 mb-4" style="opacity: 0.9;">Giải pháp quản lý phòng họp, phòng Lab và mượn thiết bị tiện lợi, thông minh. Trải nghiệm ngay quy trình đặt phòng hoàn toàn tự động!</p>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <i class="fa-solid fa-calendar-check text-white" style="font-size: 10rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- THANH TÌM KIẾM -->
+    <div class="card shadow border-0 rounded-4 mb-5" style="transform: translateY(-40px); margin-bottom: -20px; z-index: 10; position: relative;">
+        <div class="card-body p-4">
+            <form asp-controller="Home" asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Tên phòng</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control border-start-0 ps-0" placeholder="Nhập tên phòng...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Loại phòng</label>
+                    <select name="roomType" class="form-select" asp-items="@ViewBag.RoomTypes">
+                        <option value="">-- Tất cả --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Sức chứa tối thiểu</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-users text-muted"></i></span>
+                        <input type="number" name="minCapacity" value="@ViewBag.CurrentMinCapacity" class="form-control border-start-0 ps-0" min="1" placeholder="Số người...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                        <i class="fa-solid fa-filter me-1"></i> Lọc
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KHU VỰC HIỂN THỊ ĐỘNG -->
+    <div id="main-content" class="mb-5">
+        @if (!isFiltered)
+        {
+            <!-- GIAO DIỆN 1: DANH MỤC LỚN -->
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-dark mb-2">Danh mục Phòng</h2>
+                <p class="text-muted mb-0">Vui lòng chọn loại phòng bạn muốn đặt để xem chi tiết</p>
+            </div>
+
+            <div class="row g-4 mb-5">
+                @{
+                    var groupedRooms = Model.Where(r => !string.IsNullOrEmpty(r.RoomType)).GroupBy(r => r.RoomType).ToList();
+
+                    foreach (var group in groupedRooms)
+                    {
+                        string iconClass = "fa-door-open";
+                        string bgColor = "bg-primary";
+                        string desc = "Nhấn vào để xem danh sách các phòng trống.";
+
+                        if (group.Key.ToLower().Contains("lab"))
+                        {
+                            iconClass = "fa-computer"; bgColor = "bg-primary"; desc = "Hệ thống phòng thực hành máy tính cấu hình cao.";
+                        }
+                        else if (group.Key.ToLower().Contains("họp"))
+                        {
+                            iconClass = "fa-users-viewfinder"; bgColor = "bg-success"; desc = "Không gian họp chuyên nghiệp, riêng tư và đầy đủ thiết bị.";
+                        }
+                        else if (group.Key.ToLower().Contains("hội trường"))
+                        {
+                            iconClass = "fa-microphone-lines"; bgColor = "bg-warning"; desc = "Sức chứa lớn, thích hợp cho hội thảo và sự kiện.";
+                        }
+
+                        <div class="col-md-4">
+                            <a href="@Url.Action("Index", "Home", new { roomType = group.Key })" class="text-decoration-none text-dark d-block h-100">
+                                <div class="feature-card text-center">
+                                    <div class="icon-box @bgColor mx-auto shadow-sm @(bgColor.Contains("warning") ? "text-dark" : "text-white")">
+                                        <i class="fa-solid @iconClass"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-3">@group.Key</h4>
+                                    <p class="text-muted mb-4">@desc</p>
+                                    <div class="badge bg-light text-primary border border-primary p-2 px-3 fs-6 rounded-pill">
+                                        @group.Count() phòng <i class="fa-solid fa-arrow-right ms-1"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- PHẦN MỚI 1: QUY TRÌNH 3 BƯỚC LẤP ĐẦY KHOẢNG TRỐNG -->
+            <div class="py-5 border-top border-bottom my-5">
+                <div class="text-center mb-5">
+                    <h3 class="fw-bold text-dark">Quy trình đặt phòng</h3>
+                    <p class="text-muted">Hoàn tất thủ tục mượn phòng chỉ với 3 bước đơn giản</p>
+                </div>
+                <div class="row text-center px-lg-5">
+                    <div class="col-md-4 step-line mb-4 mb-md-0">
+                        <div class="step-icon bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center border border-primary border-2 mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fa-solid fa-1"></i>
+                        </div>
+                        <h6 class="fw-bold">Chọn Phòng</h6>
+                        <p class="text-muted small">Tìm kiếm và chọn phòng phù hợp với nhu cầu.</p>
+                    </div>
+                    <div class="col-md-4 step-line mb-4 mb-md-0">
+                        <div class="step-icon bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center border border-primary border-2 mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fa-solid fa-2"></i>
+                        </div>
+                        <h6 class="fw-bold">Chọn Thời Gian & Thiết bị</h6>
+                        <p class="text-muted small">Kiểm tra lịch trống và mượn thêm trang thiết bị.</p>
+                    </div>
+                    <div class="col-md-4 step-line">
+                        <div class="step-icon bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center border border-primary border-2 mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fa-solid fa-3"></i>
+                        </div>
+                        <h6 class="fw-bold">Chờ Phê Duyệt</h6>
+                        <p class="text-muted small">Quản trị viên duyệt đơn và bạn có thể sử dụng phòng.</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- GIAO DIỆN 2: DANH SÁCH PHÒNG CHI TIẾT -->
+            <div class="d-flex justify-content-between align-items-end mb-4 pb-2 border-bottom">
+                <div>
+                    <h3 class="fw-bold text-dark mb-1">
+                        @(!string.IsNullOrEmpty(ViewBag.CurrentRoomType) ? $"Danh sách: {ViewBag.CurrentRoomType}" : "Kết quả tìm kiếm")
+                    </h3>
+                    <p class="text-muted mb-0">Tìm thấy <strong>@Model.Count()</strong> phòng phù hợp.</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary fw-bold rounded-pill px-4">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Quay lại danh mục
+                </a>
+            </div>
+
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var room in Model)
+                    {
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card room-card h-100">
+                                <div class="room-cover">
+                                    <i class="fa-solid fa-door-open room-icon"></i>
+                                </div>
+                                <div class="card-body d-flex flex-column p-4">
+                                    <h5 class="card-title fw-bold text-dark mb-2">@room.Name</h5>
+                                    <p class="card-text text-muted small mb-4">
+                                        <i class="fa-solid fa-users me-1"></i>Sức chứa: <strong>@room.Capacity</strong> người.
+                                    </p>
+                                    <a asp-controller="Bookings" asp-action="Create" asp-route-roomId="@room.Id" class="btn btn-primary btn-book w-100 mt-auto">
+                                        <i class="fa-regular fa-calendar-plus me-2"></i>Đặt phòng
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/7486/7486754.png" alt="No Data" style="width: 120px; opacity: 0.5;" class="mb-3">
+                        <h5 class="text-muted fw-medium">Không tìm thấy phòng nào phù hợp.</h5>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- PHẦN MỚI 2: KHỐI TÍNH NĂNG ĐƯỢC THAY ĐỔI CẤU TRÚC ĐỂ KHÔNG BỊ TRÙNG LẶP -->
+    <div class="bg-light rounded-4 p-4 p-lg-5 mb-4 shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-lg-4 mb-4 mb-lg-0 text-center text-lg-start pe-lg-4 border-end-lg">
+                <h3 class="fw-bold text-dark mb-3">Tại sao chọn<br><span class="text-primary">T-Booking?</span></h3>
+                <p class="text-muted mb-0">Hệ thống tối ưu giúp bạn tiết kiệm thời gian, chống trùng lịch và quản lý thiết bị hiệu quả.</p>
+            </div>
+            <div class="col-lg-8 ps-lg-5">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-box-sm bg-white text-primary flex-shrink-0 me-3 rounded-circle shadow-sm border border-primary">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Nhanh chóng & Tiện lợi</h6>
+                                <p class="text-muted small mb-0">Chỉ vài thao tác click chuột để đặt phòng.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-box-sm bg-white text-success flex-shrink-0 me-3 rounded-circle shadow-sm border border-success">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Chống trùng lịch</h6>
+                                <p class="text-muted small mb-0">Tự động phát hiện và ngăn chặn trùng giờ.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-box-sm bg-white text-warning flex-shrink-0 me-3 rounded-circle shadow-sm border border-warning">
+                                <i class="fa-solid fa-chart-pie"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Lịch chung trực quan</h6>
+                                <p class="text-muted small mb-0">Giao diện FullCalendar sinh động, dễ nhìn.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-box-sm bg-white text-info flex-shrink-0 me-3 rounded-circle shadow-sm border border-info">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Quản lý thiết bị</h6>
+                                <p class="text-muted small mb-0">Mượn thiết bị đi kèm phòng dễ dàng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

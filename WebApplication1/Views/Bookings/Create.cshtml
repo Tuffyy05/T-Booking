@@ -1,0 +1,230 @@
+﻿@model WebApplication1.Models.Booking
+
+@{
+    ViewData["Title"] = "Đặt phòng";
+    var today = DateTime.Now.ToString("yyyy-MM-dd");
+}
+
+<style>
+    /* CSS Tùy chỉnh cho Form đẹp hơn */
+    .booking-card {
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .custom-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+
+    .custom-input {
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        color: #495057;
+        transition: all 0.3s ease;
+    }
+
+        .custom-input:focus {
+            background-color: #ffffff;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
+            color: white;
+        }
+
+    .btn-light-custom {
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+        color: #6c757d;
+        background-color: white;
+        transition: all 0.2s;
+    }
+
+        .btn-light-custom:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+            border-color: #c1c9d0;
+        }
+
+    /* Custom CSS cho phần nhập số lượng */
+    .facility-box {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-7">
+        <div class="card booking-card bg-white">
+            <div class="card-body p-5">
+                <h3 class="text-primary fw-bold mb-4 pb-2 border-bottom">
+                    <i class="fa-solid fa-calendar-check me-2"></i>Đặt phòng: <span class="text-dark">@ViewBag.RoomName</span>
+                </h3>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger" style="border-radius: 10px;">
+                        <div asp-validation-summary="All" class="text-danger fw-medium mb-0"></div>
+                    </div>
+                }
+
+                <form asp-action="Create" method="post" id="bookingForm">
+                    <input type="hidden" asp-for="RoomId" />
+
+                    <input type="hidden" asp-for="StartTime" id="realStartTime" />
+                    <input type="hidden" asp-for="EndTime" id="realEndTime" />
+
+                    <!-- Thời gian bắt đầu -->
+                    <div class="mb-4 pb-2">
+                        <label class="form-label fw-bold custom-label">Thời gian bắt đầu</label>
+                        <div class="row gx-3">
+                            <div class="col-sm-7 mb-2 mb-sm-0">
+                                <input type="date" id="uiStartDate" class="form-control custom-input fw-medium" value="@today" required />
+                            </div>
+                            <div class="col-sm-5">
+                                <select id="uiStartTime" class="form-select custom-input fw-medium cursor-pointer">
+                                    @for (int i = 7; i <= 21; i++)
+                                    {
+                                        var hour = i.ToString("D2");
+                                        <option value="@(hour):00">@(hour):00</option>
+                                        <option value="@(hour):30">@(hour):30</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thời gian kết thúc -->
+                    <div class="mb-4 pb-2">
+                        <label class="form-label fw-bold custom-label">Thời gian kết thúc</label>
+                        <div class="row gx-3">
+                            <div class="col-sm-7 mb-2 mb-sm-0">
+                                <input type="date" id="uiEndDate" class="form-control custom-input fw-medium" value="@today" required />
+                            </div>
+                            <div class="col-sm-5">
+                                <select id="uiEndTime" class="form-select custom-input fw-medium cursor-pointer">
+                                    @for (int i = 7; i <= 21; i++)
+                                    {
+                                        var hour = i.ToString("D2");
+                                        <option value="@(hour):00">@(hour):00</option>
+                                        <option value="@(hour):30" selected="@(i == 9 ? "selected" : null)">@(hour):30</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DANH SÁCH THIẾT BỊ CÓ NHẬP SỐ LƯỢNG -->
+                    <div class="mb-5">
+                        <label class="form-label fw-bold custom-label">
+                            <i class="fa-solid fa-plug me-1 text-primary"></i> Thiết bị đi kèm (Tùy chọn)
+                        </label>
+
+                        <div class="p-3 bg-light rounded-4 border">
+                            @if (ViewBag.Facilities != null && ((IEnumerable<WebApplication1.Models.Facility>)ViewBag.Facilities).Any())
+                            {
+                                <div class="row px-2">
+                                    @foreach (var fac in (IEnumerable<WebApplication1.Models.Facility>)ViewBag.Facilities)
+                                    {
+                                        <div class="col-sm-6 mb-3">
+                                            <div class="d-flex align-items-center bg-white rounded-3 p-2 shadow-sm facility-box" id="box_@fac.Id">
+                                                <!-- Checkbox -->
+                                                <div class="form-check flex-grow-1 mb-0 ms-2">
+                                                    <input class="form-check-input" type="checkbox" name="selectedFacilities" value="@fac.Id" id="fac_@fac.Id" onchange="toggleQty(@fac.Id)" style="cursor: pointer; width: 1.2rem; height: 1.2rem;">
+                                                    <label class="form-check-label fw-bold text-dark ms-1" for="fac_@fac.Id" style="cursor: pointer; padding-top: 0.15rem;">
+                                                        @fac.Name
+                                                    </label>
+                                                </div>
+
+                                                <!-- Ô nhập số lượng (Đã đảo Input lên trước Span) -->
+                                                <div class="d-flex align-items-center">
+                                                    <input type="number" name="quantity_@fac.Id" id="qty_@fac.Id" class="form-control form-control-sm text-center fw-bold text-primary px-1"
+                                                           style="width: 45px; height: 30px; border-radius: 6px;"
+                                                           min="1" max="@fac.Quantity" value="1" disabled>
+                                                    <span class="text-muted ms-2 fw-medium" style="font-size: 0.85rem;" title="Tổng số lượng sẵn có">/ @fac.Quantity</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted fst-italic text-center py-2" style="font-size: 0.9rem;">
+                                    Phòng này hiện không có thiết bị nào được thiết lập.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-gradient fw-bold py-3 fs-5">
+                            <i class="fa-solid fa-check-circle me-2"></i>Xác nhận Đặt phòng
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-light-custom fw-medium py-2">
+                            Quay lại trang chủ
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function syncDateTime() {
+            var startDate = document.getElementById("uiStartDate").value;
+            var startTime = document.getElementById("uiStartTime").value;
+            document.getElementById("realStartTime").value = startDate + "T" + startTime;
+
+            var endDate = document.getElementById("uiEndDate").value;
+            var endTime = document.getElementById("uiEndTime").value;
+            document.getElementById("realEndTime").value = endDate + "T" + endTime;
+        }
+
+        document.getElementById("uiStartDate").addEventListener("change", syncDateTime);
+        document.getElementById("uiStartTime").addEventListener("change", syncDateTime);
+        document.getElementById("uiEndDate").addEventListener("change", syncDateTime);
+        document.getElementById("uiEndTime").addEventListener("change", syncDateTime);
+
+        syncDateTime();
+
+        // Xử lý bật/tắt ô nhập số lượng thiết bị
+        function toggleQty(id) {
+            var checkbox = document.getElementById('fac_' + id);
+            var qtyInput = document.getElementById('qty_' + id);
+            var box = document.getElementById('box_' + id);
+
+            if (checkbox.checked) {
+                qtyInput.disabled = false;
+                box.style.borderColor = '#0d6efd'; // Đổi viền xanh khi chọn
+                box.style.backgroundColor = '#f0f7ff';
+            } else {
+                qtyInput.disabled = true;
+                qtyInput.value = 1; // Reset về 1
+                box.style.borderColor = '#dee2e6';
+                box.style.backgroundColor = '#ffffff';
+            }
+        }
+    </script>
+}

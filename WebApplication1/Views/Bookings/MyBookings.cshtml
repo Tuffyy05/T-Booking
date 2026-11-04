@@ -1,0 +1,66 @@
+﻿@model IEnumerable<WebApplication1.Models.Booking>
+
+@{
+    ViewData["Title"] = "Lịch sử đặt phòng";
+}
+
+<div class="container mt-5 mb-5">
+    <h3 class="fw-bold text-primary mb-4"><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử đặt phòng của tôi</h3>
+
+    <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 border-bottom-0 text-secondary">Phòng / Thiết bị</th>
+                            <th class="py-3 border-bottom-0 text-secondary">Thời gian sử dụng</th>
+                            <th class="py-3 border-bottom-0 text-secondary">Ngày tạo đơn</th>
+                            <th class="py-3 border-bottom-0 text-secondary text-center">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="px-4 py-4 fw-bold text-dark fs-5">@item.Room.Name</td>
+                                    <td class="py-4">
+                                        <div class="text-success fw-medium mb-1"><i class="fa-solid fa-arrow-right-to-bracket me-2"></i>@item.StartTime.ToString("HH:mm - dd/MM/yyyy")</div>
+                                        <div class="text-danger fw-medium"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>@item.EndTime.ToString("HH:mm - dd/MM/yyyy")</div>
+                                    </td>
+                                    <td class="py-4 text-muted fw-medium">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td class="py-4 text-center">
+                                        @if (item.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning text-dark px-3 py-2 fs-6" style="border-radius: 8px;"><i class="fa-regular fa-hourglass-half me-1"></i> Chờ duyệt</span>
+                                        }
+                                        else if (item.Status == "Approved")
+                                        {
+                                            <span class="badge bg-success px-3 py-2 fs-6" style="border-radius: 8px;"><i class="fa-solid fa-check me-1"></i> Đã duyệt</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger px-3 py-2 fs-6" style="border-radius: 8px;"><i class="fa-solid fa-xmark me-1"></i> Từ chối</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open fs-1 mb-3 text-light"></i>
+                                    <h5>Bạn chưa có lịch sử đặt phòng nào!</h5>
+                                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary mt-2" style="border-radius: 8px;">Về trang chủ đặt phòng ngay</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

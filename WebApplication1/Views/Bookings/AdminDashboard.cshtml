@@ -1,0 +1,143 @@
+﻿@{
+    ViewData["Title"] = "Thống kê Tổng quan";
+}
+
+<div class="container-fluid mt-2">
+    <h2 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-chart-pie me-2"></i>Bảng Điều Khiển Admin</h2>
+
+    <!-- 4 THẺ SỐ LIỆU TỔNG QUAN (Đã tăng padding và cỡ chữ) -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card text-white bg-primary shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-normal mb-3"><i class="fa-solid fa-door-open me-2"></i>Tổng số phòng</h5>
+                    <h1 class="fw-bold mb-0 display-5">@ViewBag.TotalRooms</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card text-white bg-info shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-normal mb-3"><i class="fa-solid fa-file-lines me-2"></i>Tổng đơn đặt</h5>
+                    <h1 class="fw-bold mb-0 display-5">@ViewBag.TotalBookings</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card text-white bg-warning shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-normal mb-3"><i class="fa-solid fa-clock me-2"></i>Đơn chờ duyệt</h5>
+                    <h1 class="fw-bold mb-0 display-5 text-dark">@ViewBag.PendingBookings</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card text-white bg-success shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-normal mb-3"><i class="fa-solid fa-check me-2"></i>Đơn đã duyệt</h5>
+                    <h1 class="fw-bold mb-0 display-5">@ViewBag.ApprovedBookings</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC VẼ BIỂU ĐỒ (Đã ép chiều cao tối thiểu để biểu đồ to ra) -->
+    <div class="row">
+        <!-- Biểu đồ cột -->
+        <div class="col-xl-8 col-lg-7 mb-4">
+            <div class="card shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h4 class="fw-bold text-dark">Tần suất đặt theo từng phòng</h4>
+                </div>
+                <div class="card-body" style="position: relative; min-height: 450px;">
+                    <!-- Thêm absolute để Chart.js tự do co giãn lấp đầy không gian -->
+                    <canvas id="barChart" style="position: absolute; left: 20px; top: 20px; right: 20px; bottom: 20px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ tròn -->
+        <div class="col-xl-4 col-lg-5 mb-4">
+            <div class="card shadow-sm border-0 h-100" style="border-radius: 15px;">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h4 class="fw-bold text-dark">Tỉ lệ trạng thái đơn</h4>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 450px;">
+                    <canvas id="pieChart" style="max-height: 350px; width: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Gọi thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        var roomLabels = @Html.Raw(Json.Serialize(ViewBag.RoomLabels));
+        var roomCounts = @Html.Raw(Json.Serialize(ViewBag.RoomCounts));
+
+        var statusLabels = @Html.Raw(Json.Serialize(ViewBag.StatusLabels));
+        var statusCounts = @Html.Raw(Json.Serialize(ViewBag.StatusCounts));
+
+        // TỰ ĐỘNG MAP MÀU THEO TÊN TRẠNG THÁI
+        var dynamicColors = statusLabels.map(function(status) {
+            if (status === 'Approved') return '#198754'; // Xanh lá
+            if (status === 'Pending') return '#ffc107';  // Vàng
+            if (status === 'Rejected') return '#dc3545'; // Đỏ
+            return '#6c757d'; // Xám dự phòng
+        });
+
+        // Biểu đồ Cột
+        var ctxBar = document.getElementById('barChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: roomLabels,
+                datasets: [{
+                    label: 'Số lượt đặt',
+                    data: roomCounts,
+                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { font: { size: 14 } } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 14 } } },
+                    x: { ticks: { font: { size: 14 } } }
+                }
+            }
+        });
+
+        // Biểu đồ Tròn
+        var ctxPie = document.getElementById('pieChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: dynamicColors, // Gọi mảng màu tự động ở đây
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 15 }, padding: 20 }
+                    }
+                }
+            }
+        });
+    </script>
+}

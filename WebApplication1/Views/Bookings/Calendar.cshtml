@@ -1,0 +1,156 @@
+﻿@{
+    ViewData["Title"] = "Lịch Đặt Phòng";
+}
+
+<style>
+    /* Làm đẹp thẻ bọc ngoài lịch */
+    .fc-theme-standard {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 15px;
+    }
+
+    /* Đổi màu và font chữ thanh tiêu đề (Tháng/Năm) */
+    .fc-toolbar-title {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        font-weight: 700 !important;
+        color: #0d6efd !important; /* Màu xanh Primary của Bootstrap */
+        font-size: 1.5rem !important;
+        text-transform: capitalize;
+    }
+
+    /* Tùy chỉnh các nút bấm trên lịch (Today, Prev, Next, Month...) */
+    .fc-button-primary {
+        background-color: #f8f9fa !important; /* Màu xám sáng */
+        color: #495057 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        text-transform: capitalize !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease-in-out;
+        box-shadow: none !important;
+    }
+
+        /* Hiệu ứng khi rê chuột vào nút */
+        .fc-button-primary:hover {
+            background-color: #e9ecef !important;
+            color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+
+        /* Hiệu ứng khi nút đang được chọn (Active) */
+        .fc-button-active, .fc-button-primary:active {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+            border-color: #0d6efd !important;
+        }
+
+    /* Làm nhạt màu các đường kẻ lưới (Grid lines) */
+    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+        border-color: #e9ecef !important;
+    }
+
+    /* Tùy chỉnh phần tên ngày (Thứ 2, Thứ 3...) */
+    .fc-col-header-cell-cushion {
+        color: #495057;
+        font-weight: 600;
+        padding: 10px 0 !important;
+        text-decoration: none !important;
+    }
+
+        .fc-col-header-cell-cushion:hover {
+            color: #0d6efd;
+        }
+
+    /* Tô đậm phần "Ngày hôm nay" */
+    .fc-day-today {
+        background-color: rgba(13, 110, 253, 0.05) !important;
+    }
+
+    /* Trang trí các khối sự kiện (Events) */
+    .fc-event {
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 3px 5px !important;
+        font-size: 0.85rem !important;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .fc-event:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            z-index: 10 !important;
+        }
+
+    /* Canh chỉnh thời gian ở cột bên trái */
+    .fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold mb-0 text-primary">
+            <i class="fa-regular fa-calendar-days me-2"></i>Lịch Đặt Phòng Toàn Hệ Thống
+        </h3>
+    </div>
+
+    <!-- Hộp cảnh báo nhắc nhở người dùng về giờ đã bị đặt -->
+    <div class="alert alert-info shadow-sm border-0 mb-4 d-flex align-items-center" style="border-radius: 12px; background-color: #eef7ff; color: #0056b3;">
+        <i class="fa-solid fa-circle-info fs-4 me-3"></i>
+        <div>
+            Các khung giờ <strong class="text-danger">màu đỏ</strong> hiển thị trên lịch dưới đây là những khung giờ <strong>đã có người đặt và được duyệt</strong>. Bạn vui lòng xem để tránh đặt trùng vào những giờ này.
+        </div>
+    </div>
+
+    <!-- Nơi FullCalendar sẽ render (vẽ) lịch -->
+    <div class="card shadow-sm border-0 p-2 rounded-4">
+        <div id='calendar'></div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Nhúng thư viện JS của FullCalendar -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek', // Mặc định xem lịch tuần
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Hôm nay',
+                    month: 'Tháng',
+                    week: 'Tuần',
+                    day: 'Ngày'
+                },
+                locale: 'vi', // Tiếng Việt
+                slotMinTime: '07:00:00', // Bắt đầu 7h sáng
+                slotMaxTime: '22:00:00', // Kết thúc 10h tối (Mở rộng thêm xíu)
+                allDaySlot: false, // Ẩn dòng "Cả ngày"
+                slotDuration: '00:30:00', // Chia nhỏ các dòng thời gian thành 30 phút/dòng
+                expandRows: true, // Tự động kéo dãn chiều cao cho vừa màn hình
+                events: '/Bookings/GetEvents', // Gọi API lấy dữ liệu
+                eventClick: function(info) {
+                    // Cảnh báo rõ ràng cho người dùng khi click vào giờ màu đỏ
+                    alert('KHUNG GIỜ NÀY ĐÃ CÓ NGƯỜI ĐẶT!\n\nPhòng: ' + info.event.title + '\nThời gian: ' +
+                          info.event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' +
+                          info.event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) +
+                          '\nNgày: ' + info.event.start.toLocaleDateString('vi-VN'));
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+}
