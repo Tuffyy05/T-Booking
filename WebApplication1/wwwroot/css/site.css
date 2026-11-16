@@ -1,5 +1,6 @@
 ﻿html {
   font-size: 14px;
+  scroll-behavior: smooth;
 }
 
 @media (min-width: 768px) {
@@ -8,31 +9,58 @@
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* ========================================================
+   GIAO DIỆN HIỆN ĐẠI, TINH TẾ, THANH LỊCH (CLEAN & PROFESSIONAL)
+======================================================== */
 body {
-  margin-bottom: 60px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f8fafc;
+  color: #334155;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-/* Ngăn chặn hành vi bôi đen văn bản trên toàn bộ trang web */
-body {
-    -webkit-user-select: none; /* Dành cho Chrome, Safari, Opera */
-    -moz-user-select: none; /* Dành cho Firefox */
-    -ms-user-select: none; /* Dành cho Edge/IE */
-    user-select: none; /* Chuẩn chung */
+/* Thanh cuộn gọn gàng */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-/* Kéo lại quyền bôi đen/copy nội dung dành riêng cho các ô nhập liệu */
+/* Focus outline lịch sự */
+.btn:focus, .btn:active:focus, .form-control:focus, .form-select:focus {
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15) !important;
+  border-color: #0d6efd !important;
+}
+
+/* Cho phép copy dữ liệu trong các ô nhập và tin nhắn */
 input, textarea, select {
-    -webkit-user-select: auto;
-    -moz-user-select: auto;
-    -ms-user-select: auto;
-    user-select: auto;
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+/* Card chuẩn mực, đổ bóng nhẹ */
+.card-clean {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-clean:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }

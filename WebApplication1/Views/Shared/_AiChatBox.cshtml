@@ -1,0 +1,824 @@
+<!-- ============================================================
+     AI CHAT BOX T-BOOKING - GÓC DƯỚI BÊN PHẢI (BOTTOM-RIGHT)
+     Hỗ trợ: Đặt phòng, Thiết bị, Thông tin phòng, Lịch trống theo giờ/số lượng.
+     Tự động từ chối câu hỏi ngoài phạm vi.
+============================================================ -->
+
+<style>
+    /* 1. NÚT KÍCH HOẠT CHAT (FLOATING ACTION BUTTON) */
+    .tbooking-chat-fab {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 10px 25px rgba(13, 110, 253, 0.35);
+        cursor: pointer;
+        z-index: 1050;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        outline: none;
+    }
+
+    .tbooking-chat-fab:hover {
+        transform: scale(1.08) translateY(-3px);
+        box-shadow: 0 14px 30px rgba(13, 110, 253, 0.5);
+        color: #ffffff;
+    }
+
+    .tbooking-chat-fab:active {
+        transform: scale(0.95);
+    }
+
+    /* Hiệu ứng vòng sóng lan tỏa (Pulse Wave) */
+    .tbooking-chat-fab::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid #3b82f6;
+        opacity: 0.8;
+        animation: tbooking-pulse 2.2s infinite;
+        z-index: -1;
+    }
+
+    @@keyframes tbooking-pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+        70% {
+            transform: scale(1.55);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1.65);
+            opacity: 0;
+        }
+    }
+
+    /* Badge gợi ý nổi bên cạnh nút */
+    .tbooking-chat-badge-prompt {
+        position: fixed;
+        bottom: 35px;
+        right: 100px;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 9px 18px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+        z-index: 1049;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        animation: tbooking-float 3s ease-in-out infinite;
+    }
+
+    @@keyframes tbooking-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    .tbooking-chat-badge-prompt:hover {
+        background-color: #f8fafc;
+        transform: translateY(-2px);
+    }
+
+    .tbooking-chat-badge-prompt .close-pill {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding-left: 4px;
+    }
+
+    .tbooking-chat-badge-prompt .close-pill:hover {
+        color: #ef4444;
+    }
+
+    /* 2. CỬA SỔ CHATBOX (WINDOW) */
+    .tbooking-chat-window {
+        position: fixed;
+        bottom: 100px;
+        right: 25px;
+        width: 400px;
+        max-width: calc(100vw - 32px);
+        height: 610px;
+        max-height: calc(100vh - 120px);
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 1050;
+        border: 1px solid #e2e8f0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(25px) scale(0.94);
+        transform-origin: bottom right;
+        transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tbooking-chat-window.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+
+    /* 3. HEADER CỬA SỔ CHAT */
+    .tbooking-chat-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #004bb5 100%);
+        color: #ffffff;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.18);
+    }
+
+    .tbooking-chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .tbooking-chat-avatar {
+        width: 42px;
+        height: 42px;
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .tbooking-chat-online-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 11px;
+        height: 11px;
+        background-color: #10b981;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+    }
+
+    .tbooking-chat-title {
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .tbooking-chat-subtitle {
+        font-size: 0.76rem;
+        opacity: 0.9;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .tbooking-chat-header-actions button {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: #ffffff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-left: 4px;
+    }
+
+    .tbooking-chat-header-actions button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.08);
+    }
+
+    /* 4. KHU VỰC TIN NHẮN (MESSAGES) */
+    .tbooking-chat-body {
+        flex: 1;
+        background-color: #f8fafc;
+        overflow-y: auto;
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        scroll-behavior: smooth;
+    }
+
+    .tbooking-chat-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .tbooking-chat-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    /* Tin nhắn dạng bong bóng */
+    .tbooking-message {
+        display: flex;
+        gap: 10px;
+        max-width: 88%;
+        animation: tbooking-msg-appear 0.25s ease-out;
+    }
+
+    @@keyframes tbooking-msg-appear {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tbooking-message.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .tbooking-message.bot {
+        align-self: flex-start;
+    }
+
+    .tbooking-msg-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e0edff;
+        color: #0d6efd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .tbooking-msg-content {
+        padding: 12px 15px;
+        border-radius: 18px;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        word-break: break-word;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .tbooking-message.user .tbooking-msg-content {
+        background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+    }
+
+    .tbooking-message.bot .tbooking-msg-content {
+        background: #ffffff;
+        color: #1e293b;
+        border: 1px solid #e2e8f0;
+        border-bottom-left-radius: 4px;
+    }
+
+    .tbooking-msg-content p {
+        margin: 0 0 8px 0;
+    }
+
+    .tbooking-msg-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .tbooking-msg-content a.btn-book-link {
+        display: inline-block;
+        background-color: #0d6efd;
+        color: #ffffff !important;
+        text-decoration: none;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin: 4px 0;
+        transition: background 0.2s;
+    }
+
+    .tbooking-msg-content a.btn-book-link:hover {
+        background-color: #0052cc;
+        color: #ffffff !important;
+    }
+
+    /* Thẻ chào mừng ban đầu (Welcome Card) */
+    .tbooking-welcome-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 4px;
+    }
+
+    .tbooking-welcome-card h6 {
+        color: #0d6efd;
+        font-weight: 700;
+        font-size: 0.98rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .tbooking-welcome-features {
+        font-size: 0.85rem;
+        color: #475569;
+        margin: 8px 0;
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .tbooking-welcome-features li {
+        margin-bottom: 6px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .tbooking-welcome-features li i {
+        color: #0d6efd;
+        margin-top: 3px;
+    }
+
+    /* Gợi ý câu hỏi nhanh (Quick Chips) */
+    .tbooking-quick-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .tbooking-chip {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+
+    .tbooking-chip:hover {
+        background: #e0edff;
+        color: #0d6efd;
+        border-color: #93c5fd;
+        transform: translateY(-1px);
+    }
+
+    /* Hiệu ứng đang gõ (Typing Indicator) */
+    .tbooking-typing-indicator {
+        display: none;
+        align-self: flex-start;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 10px 14px;
+        border-radius: 18px;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        margin-left: 40px;
+    }
+
+    .tbooking-typing-indicator.active {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tbooking-typing-dot {
+        width: 7px;
+        height: 7px;
+        background-color: #94a3b8;
+        border-radius: 50%;
+        animation: tbooking-bounce 1.4s infinite ease-in-out both;
+    }
+
+    .tbooking-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .tbooking-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @@keyframes tbooking-bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); background-color: #0d6efd; }
+    }
+
+    /* 5. FOOTER NHẬP TIN NHẮN (INPUT) */
+    .tbooking-chat-footer {
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        padding: 12px 14px;
+    }
+
+    .tbooking-input-group {
+        display: flex;
+        align-items: center;
+        background: #f1f5f9;
+        border-radius: 25px;
+        padding: 4px 6px 4px 16px;
+        border: 1px solid #cbd5e1;
+        transition: all 0.2s ease;
+    }
+
+    .tbooking-input-group:focus-within {
+        border-color: #0d6efd;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    .tbooking-chat-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 0.92rem;
+        color: #1e293b;
+        padding: 8px 0;
+        font-family: inherit;
+    }
+
+    .tbooking-chat-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .tbooking-chat-send-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #0d6efd;
+        color: #ffffff;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .tbooking-chat-send-btn:hover {
+        background: #0052cc;
+        transform: scale(1.05);
+    }
+
+    .tbooking-chat-send-btn:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .tbooking-chat-disclaimer {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 6px;
+        margin-bottom: 0;
+    }
+</style>
+
+<!-- NÚT GỢI Ý CHAT NỔI (CLICK ĐỂ MỞ NHANH) -->
+<div class="tbooking-chat-badge-prompt" id="tbookingChatBadgePrompt" onclick="tbookingToggleChat(true)">
+    <span><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i>Hỏi AI về phòng & thiết bị</span>
+    <span class="close-pill" onclick="tbookingDismissBadge(event)"><i class="fa-solid fa-xmark"></i></span>
+</div>
+
+<!-- NÚT TRÒN NỔI (FAB) GÓC DƯỚI BÊN PHẢI -->
+<button class="tbooking-chat-fab" id="tbookingChatFab" onclick="tbookingToggleChat()" title="AI Trợ lý Đặt Phòng T-Booking" aria-label="Mở chat AI">
+    <i class="fa-solid fa-robot" id="tbookingFabIcon"></i>
+</button>
+
+<!-- CỬA SỔ HỘP CHAT -->
+<div class="tbooking-chat-window" id="tbookingChatWindow" role="dialog" aria-modal="true" aria-labelledby="tbookingChatTitle">
+    <!-- HEADER -->
+    <div class="tbooking-chat-header">
+        <div class="tbooking-chat-header-info">
+            <div class="tbooking-chat-avatar">
+                <i class="fa-solid fa-robot"></i>
+                <div class="tbooking-chat-online-dot"></div>
+            </div>
+            <div>
+                <h5 class="tbooking-chat-title" id="tbookingChatTitle">AI Trợ lý T-Booking</h5>
+                <p class="tbooking-chat-subtitle">
+                    <i class="fa-solid fa-circle text-success" style="font-size: 0.5rem;"></i> Trực tuyến • Sẵn sàng hỗ trợ
+                </p>
+            </div>
+        </div>
+        <div class="tbooking-chat-header-actions">
+            <button type="button" onclick="tbookingResetChat()" title="Làm mới cuộc trò chuyện" aria-label="Làm mới">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button type="button" onclick="tbookingToggleChat(false)" title="Thu nhỏ" aria-label="Đóng">
+                <i class="fa-solid fa-minus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- NỘI DUNG CUỘC TRÒ CHUYỆN -->
+    <div class="tbooking-chat-body" id="tbookingChatBody">
+        <!-- THẺ CHÀO MỪNG BAN ĐẦU -->
+        <div class="tbooking-welcome-card">
+            <h6><i class="fa-solid fa-sparkles"></i> Xin chào bạn!</h6>
+            <p style="font-size: 0.88rem; color: #334155; margin-bottom: 6px;">
+                Tôi là <strong>Trợ lý AI của hệ thống T-Booking</strong>. Tôi có thể hỗ trợ bạn:
+            </p>
+            <ul class="tbooking-welcome-features">
+                <li><i class="fa-solid fa-check-circle"></i> <span><strong>Kiểm tra phòng trống</strong> theo khung giờ & ngày bạn cần</span></li>
+                <li><i class="fa-solid fa-check-circle"></i> <span><strong>Tìm phòng phù hợp</strong> theo số lượng người (sức chứa)</span></li>
+                <li><i class="fa-solid fa-check-circle"></i> <span><strong>Thông tin phòng</strong> (Phòng Lab máy tính, Phòng họp, Hội trường)</span></li>
+                <li><i class="fa-solid fa-check-circle"></i> <span><strong>Tra cứu thiết bị</strong> (Máy chiếu, Micro, Loa, Bảng vẽ...)</span></li>
+                <li><i class="fa-solid fa-check-circle"></i> <span><strong>Hướng dẫn quy trình</strong> đặt và duyệt phòng</span></li>
+            </ul>
+            <div style="font-size: 0.78rem; color: #64748b; background: #f1f5f9; padding: 6px 10px; border-radius: 8px; margin-top: 8px;">
+                <i class="fa-solid fa-shield-halved text-primary me-1"></i> <em>Lưu ý: Tôi chuyên hỗ trợ về đặt phòng và thiết bị; các câu hỏi ngoài phạm vi hệ thống sẽ được từ chối lịch sự.</em>
+            </div>
+        </div>
+
+        <!-- GỢI Ý CÂU HỎI BAN ĐẦU -->
+        <div class="tbooking-quick-chips" id="tbookingQuickChips">
+            <button type="button" class="tbooking-chip" onclick="tbookingSendQuick('Kiểm tra phòng trống hôm nay')">🔍 Kiểm tra phòng trống hôm nay</button>
+            <button type="button" class="tbooking-chip" onclick="tbookingSendQuick('Tìm phòng cho 30 người')">👥 Tìm phòng cho 30 người</button>
+            <button type="button" class="tbooking-chip" onclick="tbookingSendQuick('Danh sách phòng Lab máy tính')">💻 Danh sách phòng Lab</button>
+            <button type="button" class="tbooking-chip" onclick="tbookingSendQuick('Có những thiết bị gì mượn được?')">📽️ Thiết bị có sẵn gồm những gì?</button>
+            <button type="button" class="tbooking-chip" onclick="tbookingSendQuick('Hướng dẫn quy trình đặt phòng')">📝 Hướng dẫn đặt phòng</button>
+        </div>
+
+        <!-- TYPING INDICATOR -->
+        <div class="tbooking-typing-indicator" id="tbookingTypingIndicator">
+            <div class="tbooking-typing-dot"></div>
+            <div class="tbooking-typing-dot"></div>
+            <div class="tbooking-typing-dot"></div>
+        </div>
+    </div>
+
+    <!-- FOOTER NHẬP LIỆU -->
+    <div class="tbooking-chat-footer">
+        <form id="tbookingChatForm" onsubmit="tbookingHandleSubmit(event)">
+            <div class="tbooking-input-group">
+                <input type="text"
+                       class="tbooking-chat-input"
+                       id="tbookingChatInput"
+                       placeholder="Hỏi về phòng, thiết bị, giờ trống..."
+                       autocomplete="off" />
+                <button type="submit" class="tbooking-chat-send-btn" id="tbookingSendBtn" title="Gửi câu hỏi" aria-label="Gửi tin nhắn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+        <p class="tbooking-chat-disclaimer">
+            <i class="fa-solid fa-bolt text-warning me-1"></i>AI hỗ trợ tra cứu thông tin & lịch trống T-Booking
+        </p>
+    </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT XỬ LÝ CHAT BOX
+============================================================ -->
+<script>
+    (function () {
+        let isChatOpen = false;
+        let isWaitingResponse = false;
+
+        // 1. Đóng/Mở chatbox
+        window.tbookingToggleChat = function (forceState) {
+            const chatWindow = document.getElementById("tbookingChatWindow");
+            const fabIcon = document.getElementById("tbookingFabIcon");
+            const promptBadge = document.getElementById("tbookingChatBadgePrompt");
+
+            if (typeof forceState === "boolean") {
+                isChatOpen = forceState;
+            } else {
+                isChatOpen = !isChatOpen;
+            }
+
+            if (isChatOpen) {
+                chatWindow.classList.add("open");
+                fabIcon.className = "fa-solid fa-xmark";
+                if (promptBadge) promptBadge.style.display = "none";
+                setTimeout(() => {
+                    document.getElementById("tbookingChatInput")?.focus();
+                }, 200);
+            } else {
+                chatWindow.classList.remove("open");
+                fabIcon.className = "fa-solid fa-robot";
+            }
+        };
+
+        // Đóng badge gợi ý nhỏ
+        window.tbookingDismissBadge = function (event) {
+            if (event) event.stopPropagation();
+            const promptBadge = document.getElementById("tbookingChatBadgePrompt");
+            if (promptBadge) promptBadge.style.display = "none";
+        };
+
+        // 2. Làm mới cuộc trò chuyện
+        window.tbookingResetChat = function () {
+            if (confirm("Bạn có muốn làm mới cuộc trò chuyện không?")) {
+                const body = document.getElementById("tbookingChatBody");
+                // Giữ lại welcome card và quick chips
+                const welcomeCard = body.querySelector(".tbooking-welcome-card");
+                const quickChips = document.getElementById("tbookingQuickChips");
+                const typing = document.getElementById("tbookingTypingIndicator");
+
+                body.innerHTML = "";
+                if (welcomeCard) body.appendChild(welcomeCard);
+                if (quickChips) body.appendChild(quickChips);
+                if (typing) body.appendChild(typing);
+
+                document.getElementById("tbookingChatInput").value = "";
+                document.getElementById("tbookingChatInput").focus();
+            }
+        };
+
+        // 3. Gửi câu hỏi từ chip gợi ý
+        window.tbookingSendQuick = function (text) {
+            if (!isChatOpen) {
+                window.tbookingToggleChat(true);
+            }
+            const input = document.getElementById("tbookingChatInput");
+            input.value = text;
+            tbookingSendMessage(text);
+        };
+
+        // 4. Xử lý submit form
+        window.tbookingHandleSubmit = function (event) {
+            event.preventDefault();
+            const input = document.getElementById("tbookingChatInput");
+            const text = input.value.trim();
+            if (text && !isWaitingResponse) {
+                tbookingSendMessage(text);
+                input.value = "";
+            }
+        };
+
+        // 5. Hàm gửi tin nhắn và nhận phản hồi
+        async function tbookingSendMessage(userText) {
+            if (!userText || isWaitingResponse) return;
+
+            // Render tin nhắn của User
+            appendMessage(userText, "user");
+            setWaiting(true);
+
+            try {
+                const response = await fetch("/Chat/Ask", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: userText })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Mã phản hồi lỗi: " + response.status);
+                }
+
+                const data = await response.json();
+                setWaiting(false);
+
+                if (data && data.reply) {
+                    appendMessage(data.reply, "bot", data.quickSuggestions);
+                } else {
+                    appendMessage("Rất tiếc, tôi chưa nhận được câu trả lời từ máy chủ. Vui lòng thử lại!", "bot");
+                }
+            } catch (err) {
+                console.error("Lỗi Chatbot:", err);
+                setWaiting(false);
+                appendMessage("⚠️ Đã xảy ra sự cố khi kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!", "bot");
+            }
+        }
+
+        // 6. Thêm bong bóng tin nhắn vào giao diện
+        function appendMessage(text, sender, suggestions) {
+            const body = document.getElementById("tbookingChatBody");
+            const typing = document.getElementById("tbookingTypingIndicator");
+
+            const msgDiv = document.createElement("div");
+            msgDiv.className = `tbooking-message ${sender}`;
+
+            // Avatar
+            const avatarDiv = document.createElement("div");
+            avatarDiv.className = "tbooking-msg-avatar";
+            avatarDiv.innerHTML = sender === "user" ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+
+            // Content
+            const contentDiv = document.createElement("div");
+            contentDiv.className = "tbooking-msg-content";
+
+            if (sender === "user") {
+                contentDiv.innerText = text;
+            } else {
+                contentDiv.innerHTML = formatMarkdown(text);
+            }
+
+            msgDiv.appendChild(avatarDiv);
+            msgDiv.appendChild(contentDiv);
+
+            // Chèn trước typing indicator
+            body.insertBefore(msgDiv, typing);
+
+            // Nếu có gợi ý mới, thêm các chip phía dưới
+            if (suggestions && suggestions.length > 0 && sender === "bot") {
+                const chipsDiv = document.createElement("div");
+                chipsDiv.className = "tbooking-quick-chips";
+                suggestions.forEach(s => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "tbooking-chip";
+                    btn.innerText = s;
+                    btn.onclick = () => tbookingSendQuick(s);
+                    chipsDiv.appendChild(btn);
+                });
+                body.insertBefore(chipsDiv, typing);
+            }
+
+            // Cuộn xuống cuối
+            scrollToBottom();
+        }
+
+        function setWaiting(waiting) {
+            isWaitingResponse = waiting;
+            const typing = document.getElementById("tbookingTypingIndicator");
+            const sendBtn = document.getElementById("tbookingSendBtn");
+            const input = document.getElementById("tbookingChatInput");
+
+            if (waiting) {
+                typing.classList.add("active");
+                sendBtn.disabled = true;
+                scrollToBottom();
+            } else {
+                typing.classList.remove("active");
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        function scrollToBottom() {
+            const body = document.getElementById("tbookingChatBody");
+            setTimeout(() => {
+                body.scrollTop = body.scrollHeight;
+            }, 50);
+        }
+
+        // Định dạng Markdown đơn giản (bold, italic, link)
+        function formatMarkdown(text) {
+            if (!text) return "";
+
+            // Xử lý xuống dòng trước
+            let html = text.replace(/\r\n/g, "\n");
+
+            // Xử lý in đậm **text**
+            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+            // Xử lý in nghiêng *text*
+            html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+            // Xử lý link markdown [title](url)
+            html = html.replace(/\[(.*?)\]\((.*?)\)/g, function (match, title, url) {
+                if (url.includes("/Bookings/Create")) {
+                    return `<a href="${url}" class="btn-book-link"><i class="fa-regular fa-calendar-plus me-1"></i>${title}</a>`;
+                }
+                return `<a href="${url}" target="_blank" style="color: #0d6efd; font-weight: 600; text-decoration: underline;">${title}</a>`;
+            });
+
+            // Chuyển ký tự \n thành <br>
+            html = html.replace(/\n/g, "<br>");
+
+            return html;
+        }
+
+        // Tự động ẩn badge sau 15 giây nếu người dùng không bấm
+        setTimeout(() => {
+            const promptBadge = document.getElementById("tbookingChatBadgePrompt");
+            if (promptBadge && !isChatOpen) {
+                promptBadge.style.transition = "opacity 0.8s ease";
+                promptBadge.style.opacity = "0";
+                setTimeout(() => { promptBadge.style.display = "none"; }, 800);
+            }
+        }, 15000);
+    })();
+</script>

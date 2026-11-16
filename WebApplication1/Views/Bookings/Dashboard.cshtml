@@ -112,7 +112,6 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label text-muted fw-bold">Đổi mật khẩu mới</label>
-                                    <!-- Đã thêm name="newPassword" và required -->
                                     <input type="password" name="newPassword" class="form-control" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)..." required minlength="6">
                                 </div>
                                 <button type="submit" class="btn btn-primary px-4 rounded-pill">
@@ -145,7 +144,7 @@
                                             <th>Phòng</th>
                                             <th>Bắt đầu</th>
                                             <th>Kết thúc</th>
-                                            <th>Trạng thái</th>
+                                            <th>Trạng thái (Mã QR)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -161,15 +160,48 @@
                                                         @if (item.Status == "Approved")
                                                         {
                                                             <span class="badge bg-success">Đã duyệt</span>
+
+                                                            <!-- Nút Ảnh QR Thu Nhỏ (Dữ liệu chữ thuần) -->
+                                                            <div class="mt-2" title="Nhấn để phóng to mã QR">
+                                                                <img src="@Url.Action("GenerateQRCode", "Bookings", new { qrText = $"Mã đơn: {item.Id} - Phòng: {item.Room?.Name}" })"
+                                                                     alt="QR Code"
+                                                                     class="shadow-sm"
+                                                                     style="width: 50px; height: 50px; border-radius: 8px; border: 1px solid #dee2e6; cursor: pointer; transition: 0.2s;"
+                                                                     onmouseover="this.style.transform='scale(1.1)'"
+                                                                     onmouseout="this.style.transform='scale(1)'"
+                                                                     data-bs-toggle="modal" data-bs-target="#qrModal-@item.Id" />
+                                                            </div>
+
+                                                            <!-- Cửa sổ Modal Phóng to QR -->
+                                                            <div class="modal fade" id="qrModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                                                    <div class="modal-content" style="border-radius: 15px;">
+                                                                        <div class="modal-header border-0 pb-0">
+                                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                        </div>
+                                                                        <div class="modal-body text-center pb-4 pt-0">
+                                                                            <h5 class="fw-bold text-primary mb-3">Mã Nhận Phòng</h5>
+
+                                                                            <!-- Ảnh QR To Rõ Nét (Dữ liệu chữ thuần) -->
+                                                                            <img src="@Url.Action("GenerateQRCode", "Bookings", new { qrText = $"Mã đơn: {item.Id} - Phòng: {item.Room?.Name}" })"
+                                                                                 alt="QR Check-in"
+                                                                                 class="img-fluid shadow-sm p-2 mb-3"
+                                                                                 style="border: 2px dashed #0d6efd; border-radius: 10px; max-width: 220px;" />
+
+                                                                            <h5 class="fw-bold text-dark mb-1">@item.Room?.Name</h5>
+                                                                            <p class="text-muted mb-0 mb-2">@item.StartTime.ToString("HH:mm - dd/MM/yyyy")</p>
+                                                                            <span class="badge bg-light text-dark border"><i class="fa-solid fa-qrcode me-1"></i>Đưa mã này cho Admin quét</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         }
                                                         else if (item.Status == "Rejected")
                                                         {
-
                                                             <span class="badge bg-danger">Từ chối</span>
                                                         }
                                                         else
                                                         {
-
                                                             <span class="badge bg-warning text-dark">Chờ duyệt</span>
                                                         }
                                                     </td>

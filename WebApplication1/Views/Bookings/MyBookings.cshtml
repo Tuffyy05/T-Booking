@@ -16,7 +16,7 @@
                             <th class="px-4 py-3 border-bottom-0 text-secondary">Phòng / Thiết bị</th>
                             <th class="py-3 border-bottom-0 text-secondary">Thời gian sử dụng</th>
                             <th class="py-3 border-bottom-0 text-secondary">Ngày tạo đơn</th>
-                            <th class="py-3 border-bottom-0 text-secondary text-center">Trạng thái</th>
+                            <th class="py-3 border-bottom-0 text-secondary text-center">Trạng thái (Mã QR)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -25,7 +25,24 @@
                             foreach (var item in Model)
                             {
                                 <tr>
-                                    <td class="px-4 py-4 fw-bold text-dark fs-5">@item.Room.Name</td>
+                                    <td class="px-4 py-4">
+                                        <!-- Tên phòng -->
+                                        <div class="fw-bold text-dark fs-5">@item.Room.Name</div>
+
+                                        <!-- Liệt kê thiết bị mượn kèm (nếu có) -->
+                                        @if (item.BookingFacilities != null && item.BookingFacilities.Any())
+                                        {
+                                            <div class="mt-2 text-muted" style="font-size: 0.9rem;">
+                                                <i class="fa-solid fa-plug me-1"></i>Thiết bị đi kèm:
+                                                <ul class="mb-0 ps-4 mt-1">
+                                                    @foreach (var bf in item.BookingFacilities)
+                                                    {
+                                                        <li>@bf.Facility?.Name (x@(bf.Quantity))</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
+                                    </td>
                                     <td class="py-4">
                                         <div class="text-success fw-medium mb-1"><i class="fa-solid fa-arrow-right-to-bracket me-2"></i>@item.StartTime.ToString("HH:mm - dd/MM/yyyy")</div>
                                         <div class="text-danger fw-medium"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>@item.EndTime.ToString("HH:mm - dd/MM/yyyy")</div>
@@ -39,6 +56,15 @@
                                         else if (item.Status == "Approved")
                                         {
                                             <span class="badge bg-success px-3 py-2 fs-6" style="border-radius: 8px;"><i class="fa-solid fa-check me-1"></i> Đã duyệt</span>
+
+                                            <!-- [MỚI] HIỂN THỊ MÃ QR CODE KHI ĐƯỢC DUYỆT -->
+                                            <div class="mt-3">
+                                                <img src="@Url.Action("GenerateQRCode", "Bookings", new { qrText = $"TBooking-ID:{item.Id}-Room:{item.Room?.Name}" })"
+                                                     alt="QR Check-in"
+                                                     class="shadow-sm"
+                                                     style="width: 90px; height: 90px; border-radius: 8px; border: 1px solid #dee2e6;" />
+                                                <div class="text-muted mt-1" style="font-size: 0.8rem;">Mã nhận phòng</div>
+                                            </div>
                                         }
                                         else
                                         {

@@ -1,107 +1,142 @@
 ﻿@model WebApplication1.Models.Booking
 
 @{
-    ViewData["Title"] = "Đặt phòng";
+    ViewData["Title"] = "Đặt phòng - T-Booking Premium";
     var today = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 <style>
-    /* CSS Tùy chỉnh cho Form đẹp hơn */
-    .booking-card {
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
-        border: 1px solid rgba(0, 0, 0, 0.05);
+    .booking-luxury-card {
+        border-radius: 24px;
+        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12);
+        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
+        overflow: hidden;
     }
 
-    .custom-label {
-        font-size: 0.85rem;
+    .booking-card-header {
+        background: linear-gradient(135deg, #090d16 0%, #1e293b 100%);
+        color: #ffffff;
+        padding: 2.2rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .booking-card-header::after {
+        content: '';
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, transparent 70%);
+        border-radius: 50%;
+        top: -100px;
+        right: -50px;
+    }
+
+    .custom-label-luxury {
+        font-size: 0.8rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #6c757d;
+        letter-spacing: 0.8px;
+        color: #64748b;
         margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .custom-input {
-        border-radius: 12px;
-        border: 1px solid #e9ecef;
-        background-color: #f8f9fa;
-        padding: 0.8rem 1rem;
-        font-size: 1rem;
-        color: #495057;
-        transition: all 0.3s ease;
+    .custom-input-luxury {
+        border-radius: 14px;
+        border: 1.5px solid #e2e8f0;
+        background-color: #f8fafc;
+        padding: 0.85rem 1.1rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1e293b;
+        transition: all 0.25s ease;
     }
 
-        .custom-input:focus {
-            background-color: #ffffff;
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-        }
+    .custom-input-luxury:focus {
+        background-color: #ffffff;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
 
-    .btn-gradient {
-        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+    .btn-gradient-luxury {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         border: none;
-        border-radius: 12px;
-        color: white;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-        .btn-gradient:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
-            color: white;
-        }
-
-    .btn-light-custom {
-        border-radius: 12px;
-        border: 1px solid #dee2e6;
-        color: #6c757d;
-        background-color: white;
-        transition: all 0.2s;
-    }
-
-        .btn-light-custom:hover {
-            background-color: #f8f9fa;
-            color: #212529;
-            border-color: #c1c9d0;
-        }
-
-    /* Custom CSS cho phần nhập số lượng */
-    .facility-box {
+        border-radius: 14px;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 1rem;
+        font-size: 1.1rem;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
         transition: all 0.3s ease;
-        border: 1px solid #dee2e6;
+    }
+
+    .btn-gradient-luxury:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.5);
+        color: #ffffff;
+    }
+
+    .facility-box-luxury {
+        transition: all 0.25s ease;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 14px;
+    }
+
+    .facility-box-luxury:hover {
+        border-color: #cbd5e1;
+        background-color: #f8fafc;
     }
 </style>
 
-<div class="row justify-content-center mt-5 mb-5">
-    <div class="col-md-7">
-        <div class="card booking-card bg-white">
-            <div class="card-body p-5">
-                <h3 class="text-primary fw-bold mb-4 pb-2 border-bottom">
-                    <i class="fa-solid fa-calendar-check me-2"></i>Đặt phòng: <span class="text-dark">@ViewBag.RoomName</span>
+<div class="row justify-content-center mt-4 mb-5">
+    <div class="col-lg-8 col-md-10">
+        <div class="booking-luxury-card">
+            <!-- HEADER THẺ ĐẶT PHÒNG -->
+            <div class="booking-card-header">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill font-heading fw-bold">
+                        <i class="fa-solid fa-sparkles text-warning me-1"></i>PHIẾU ĐĂNG KÝ PHÒNG
+                    </span>
+                    <span class="text-light small opacity-75">
+                        <i class="fa-solid fa-clock me-1"></i>Xử lý tự động 24/7
+                    </span>
+                </div>
+                <h3 class="fw-bold font-heading text-white mb-1">
+                    Đặt Phòng: <span class="text-gradient-gold">@ViewBag.RoomName</span>
                 </h3>
+                <p class="text-light opacity-75 small mb-0">
+                    Vui lòng chọn khung thời gian và trang thiết bị đi kèm để gửi yêu cầu tới ban quản lý.
+                </p>
+            </div>
 
+            <div class="p-4 p-md-5">
                 @if (!ViewData.ModelState.IsValid)
                 {
-                    <div class="alert alert-danger" style="border-radius: 10px;">
+                    <div class="alert alert-danger mb-4 shadow-sm" style="border-radius: 14px; border-left: 5px solid #ef4444;">
                         <div asp-validation-summary="All" class="text-danger fw-medium mb-0"></div>
                     </div>
                 }
 
                 <form asp-action="Create" method="post" id="bookingForm">
                     <input type="hidden" asp-for="RoomId" />
-
                     <input type="hidden" asp-for="StartTime" id="realStartTime" />
                     <input type="hidden" asp-for="EndTime" id="realEndTime" />
 
-                    <!-- Thời gian bắt đầu -->
+                    <!-- KHUNG THỜI GIAN BẮT ĐẦU -->
                     <div class="mb-4 pb-2">
-                        <label class="form-label fw-bold custom-label">Thời gian bắt đầu</label>
-                        <div class="row gx-3">
-                            <div class="col-sm-7 mb-2 mb-sm-0">
-                                <input type="date" id="uiStartDate" class="form-control custom-input fw-medium" value="@today" required />
+                        <label class="custom-label-luxury">
+                            <i class="fa-regular fa-calendar-check text-primary"></i> Thời Gian Bắt Đầu
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-sm-7">
+                                <input type="date" id="uiStartDate" class="form-control custom-input-luxury" value="@today" required />
                             </div>
                             <div class="col-sm-5">
-                                <select id="uiStartTime" class="form-select custom-input fw-medium cursor-pointer">
+                                <select id="uiStartTime" class="form-select custom-input-luxury cursor-pointer">
                                     @for (int i = 7; i <= 21; i++)
                                     {
                                         var hour = i.ToString("D2");
@@ -113,15 +148,17 @@
                         </div>
                     </div>
 
-                    <!-- Thời gian kết thúc -->
+                    <!-- KHUNG THỜI GIAN KẾT THÚC -->
                     <div class="mb-4 pb-2">
-                        <label class="form-label fw-bold custom-label">Thời gian kết thúc</label>
-                        <div class="row gx-3">
-                            <div class="col-sm-7 mb-2 mb-sm-0">
-                                <input type="date" id="uiEndDate" class="form-control custom-input fw-medium" value="@today" required />
+                        <label class="custom-label-luxury">
+                            <i class="fa-solid fa-flag-checkered text-primary"></i> Thời Gian Kết Thúc
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-sm-7">
+                                <input type="date" id="uiEndDate" class="form-control custom-input-luxury" value="@today" required />
                             </div>
                             <div class="col-sm-5">
-                                <select id="uiEndTime" class="form-select custom-input fw-medium cursor-pointer">
+                                <select id="uiEndTime" class="form-select custom-input-luxury cursor-pointer">
                                     @for (int i = 7; i <= 21; i++)
                                     {
                                         var hour = i.ToString("D2");
@@ -133,34 +170,38 @@
                         </div>
                     </div>
 
-                    <!-- DANH SÁCH THIẾT BỊ CÓ NHẬP SỐ LƯỢNG -->
+                    <!-- DANH SÁCH THIẾT BỊ MƯỢN KÈM -->
                     <div class="mb-5">
-                        <label class="form-label fw-bold custom-label">
-                            <i class="fa-solid fa-plug me-1 text-primary"></i> Thiết bị đi kèm (Tùy chọn)
+                        <label class="custom-label-luxury">
+                            <i class="fa-solid fa-boxes-stacked text-primary"></i> Trang Thiết Bị Mượn Kèm (Tùy chọn)
                         </label>
 
                         <div class="p-3 bg-light rounded-4 border">
                             @if (ViewBag.Facilities != null && ((IEnumerable<WebApplication1.Models.Facility>)ViewBag.Facilities).Any())
                             {
-                                <div class="row px-2">
+                                <div class="row g-3 px-1">
                                     @foreach (var fac in (IEnumerable<WebApplication1.Models.Facility>)ViewBag.Facilities)
                                     {
-                                        <div class="col-sm-6 mb-3">
-                                            <div class="d-flex align-items-center bg-white rounded-3 p-2 shadow-sm facility-box" id="box_@fac.Id">
+                                        <div class="col-sm-6">
+                                            <div class="d-flex align-items-center bg-white p-3 shadow-sm facility-box-luxury" id="box_@fac.Id">
                                                 <!-- Checkbox -->
-                                                <div class="form-check flex-grow-1 mb-0 ms-2">
-                                                    <input class="form-check-input" type="checkbox" name="selectedFacilities" value="@fac.Id" id="fac_@fac.Id" onchange="toggleQty(@fac.Id)" style="cursor: pointer; width: 1.2rem; height: 1.2rem;">
-                                                    <label class="form-check-label fw-bold text-dark ms-1" for="fac_@fac.Id" style="cursor: pointer; padding-top: 0.15rem;">
+                                                <div class="form-check flex-grow-1 mb-0">
+                                                    <input class="form-check-input" type="checkbox" name="selectedFacilities" value="@fac.Id" id="fac_@fac.Id" onchange="toggleQty(@fac.Id)" style="cursor: pointer; width: 1.25rem; height: 1.25rem;">
+                                                    <label class="form-check-label fw-bold text-dark ms-2" for="fac_@fac.Id" style="cursor: pointer;">
                                                         @fac.Name
                                                     </label>
+                                                    @if (!string.IsNullOrEmpty(fac.Description))
+                                                    {
+                                                        <div class="text-muted small ms-2" style="font-size: 0.76rem;">@fac.Description</div>
+                                                    }
                                                 </div>
 
-                                                <!-- Ô nhập số lượng (Đã đảo Input lên trước Span) -->
-                                                <div class="d-flex align-items-center">
+                                                <!-- Ô nhập số lượng -->
+                                                <div class="d-flex align-items-center ms-2">
                                                     <input type="number" name="quantity_@fac.Id" id="qty_@fac.Id" class="form-control form-control-sm text-center fw-bold text-primary px-1"
-                                                           style="width: 45px; height: 30px; border-radius: 6px;"
+                                                           style="width: 50px; height: 32px; border-radius: 8px; border: 1.5px solid #cbd5e1;"
                                                            min="1" max="@fac.Quantity" value="1" disabled>
-                                                    <span class="text-muted ms-2 fw-medium" style="font-size: 0.85rem;" title="Tổng số lượng sẵn có">/ @fac.Quantity</span>
+                                                    <span class="text-muted ms-2 small fw-semibold" title="Tổng số lượng sẵn có">/@fac.Quantity</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -169,19 +210,20 @@
                             }
                             else
                             {
-                                <div class="text-muted fst-italic text-center py-2" style="font-size: 0.9rem;">
-                                    Phòng này hiện không có thiết bị nào được thiết lập.
+                                <div class="text-muted fst-italic text-center py-3 small">
+                                    <i class="fa-solid fa-circle-info me-1"></i>Phòng này hiện chưa gắn thiết bị mượn kèm.
                                 </div>
                             }
                         </div>
                     </div>
 
+                    <!-- NÚT HÀNH ĐỘNG -->
                     <div class="d-grid gap-3">
-                        <button type="submit" class="btn btn-gradient fw-bold py-3 fs-5">
-                            <i class="fa-solid fa-check-circle me-2"></i>Xác nhận Đặt phòng
+                        <button type="submit" class="btn-gradient-luxury">
+                            <i class="fa-solid fa-circle-check me-2"></i> Xác Nhận Gửi Yêu Cầu Đặt Phòng
                         </button>
-                        <a asp-controller="Home" asp-action="Index" class="btn btn-light-custom fw-medium py-2">
-                            Quay lại trang chủ
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary fw-bold rounded-pill py-2 text-decoration-none text-center">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại trang chủ
                         </a>
                     </div>
                 </form>
@@ -209,7 +251,6 @@
 
         syncDateTime();
 
-        // Xử lý bật/tắt ô nhập số lượng thiết bị
         function toggleQty(id) {
             var checkbox = document.getElementById('fac_' + id);
             var qtyInput = document.getElementById('qty_' + id);
@@ -217,12 +258,12 @@
 
             if (checkbox.checked) {
                 qtyInput.disabled = false;
-                box.style.borderColor = '#0d6efd'; // Đổi viền xanh khi chọn
-                box.style.backgroundColor = '#f0f7ff';
+                box.style.borderColor = '#2563eb';
+                box.style.backgroundColor = '#eff6ff';
             } else {
                 qtyInput.disabled = true;
-                qtyInput.value = 1; // Reset về 1
-                box.style.borderColor = '#dee2e6';
+                qtyInput.value = 1;
+                box.style.borderColor = '#e2e8f0';
                 box.style.backgroundColor = '#ffffff';
             }
         }

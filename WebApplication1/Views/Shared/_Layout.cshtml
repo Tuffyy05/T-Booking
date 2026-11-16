@@ -3,127 +3,215 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Hệ thống Đặt Phòng</title>
+    <title>@ViewData["Title"] - Hệ thống Đặt Phòng T-Booking</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Font chữ Inter thanh thoát, hiện đại -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        .navbar {
-            padding: 15px 0;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f6f8fc;
+            background-image: radial-gradient(#dce3f1 1.2px, transparent 1.2px);
+            background-size: 26px 26px;
+            color: #334155;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .nav-link:hover {
-            color: #007bff !important;
+        /* 1. THANH ĐIỀU HƯỚNG (NAVBAR) XANH DƯƠNG TRANG NHÃ */
+        .navbar-custom {
+            background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+            padding: 12px 0;
         }
 
-        .btn-register {
-            background-color: #007bff;
-            color: white;
-            border-radius: 25px;
-            padding: 8px 20px;
-            transition: 0.3s;
+        .navbar-custom .navbar-brand {
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.3px;
         }
 
-            .btn-register:hover {
-                background-color: #0056b3;
-                color: white;
-            }
+        .logo-icon-box {
+            background-color: #ffffff;
+            color: #0d6efd;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
 
-        /* CSS TỐI ƯU CHO SIDEBAR ADMIN */
-        .admin-sidebar {
+        .navbar-custom .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 8px 16px !important;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .navbar-custom .nav-link:hover {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-custom .nav-link.active-link {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.18);
+            font-weight: 600;
+        }
+
+        /* Nút đăng ký màu trắng viền sạch */
+        .btn-register-nav {
+            background-color: #ffffff;
+            color: #0d6efd !important;
+            border-radius: 20px;
+            padding: 8px 22px !important;
+            font-weight: 600;
+            font-size: 0.92rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .btn-register-nav:hover {
+            background-color: #f8f9fa;
+            color: #00449e !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .user-badge-nav {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff !important;
+            border-radius: 20px;
+            padding: 6px 16px !important;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* 2. SIDEBAR ADMIN GỌN GÀNG */
+        .admin-sidebar-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            padding: 1.5rem;
             min-height: 80vh;
         }
 
-            .admin-sidebar .nav-link {
-                color: #495057;
-                border-radius: 10px;
-                transition: all 0.3s ease;
-                font-size: 1.15rem;
-                padding: 14px 20px !important;
-                margin-bottom: 12px;
-            }
+        .admin-sidebar-box .nav-link {
+            color: #64748b;
+            border-radius: 10px;
+            font-weight: 500;
+            padding: 12px 16px !important;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
 
-                .admin-sidebar .nav-link i {
-                    font-size: 1.3rem;
-                    transition: transform 0.3s ease;
-                }
+        .admin-sidebar-box .nav-link:hover, .admin-sidebar-box .nav-link.active {
+            background-color: #eff6ff;
+            color: #0d6efd !important;
+            font-weight: 600;
+        }
 
-                .admin-sidebar .nav-link:hover, .admin-sidebar .nav-link.active {
-                    background-color: #f0f7ff;
-                    color: #0d6efd !important;
-                    transform: translateX(8px);
-                    font-weight: 700 !important;
-                }
-
-                    .admin-sidebar .nav-link:hover i {
-                        transform: scale(1.1);
-                    }
+        /* 3. FOOTER ĐƠN GIẢN, LỊCH SỰ */
+        .footer-clean {
+            background-color: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            padding: 2rem 0;
+            margin-top: auto;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow sticky-top mb-4">
-            <div class="container-fluid px-4">
+        <nav class="navbar navbar-expand-sm navbar-custom sticky-top">
+            <div class="container-fluid px-lg-5 px-3">
+
+                <!-- BRAND LOGO -->
                 @if (User.IsInRole("Admin"))
                 {
-                    <a class="navbar-brand fw-bold text-primary fs-4" asp-area="" asp-controller="Bookings" asp-action="AdminDashboard">
-                        <i class="fa-solid fa-building-circle-check me-2"></i>T-Booking Admin
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Bookings" asp-action="AdminDashboard">
+                        <div class="logo-icon-box me-2"><i class="fa-solid fa-building-circle-check"></i></div>
+                        <span>T-Booking Admin</span>
                     </a>
                 }
                 else
                 {
-                    <a class="navbar-brand fw-bold text-primary fs-4" asp-area="" asp-controller="Home" asp-action="Index">
-                        <i class="fa-solid fa-building-circle-check me-2"></i>T-Booking
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                        <div class="logo-icon-box me-2"><i class="fa-solid fa-building-circle-check"></i></div>
+                        <span>T-Booking</span>
                     </a>
                 }
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-label="Toggle navigation">
+                    <i class="fa-solid fa-bars fs-4"></i>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 ms-4">
+
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto ms-sm-3 mb-2 mb-sm-0 align-items-sm-center">
                         @if (!User.IsInRole("Admin"))
                         {
-                            <li class="nav-item me-3">
-                                <a class="nav-link text-dark fw-medium" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                            <li class="nav-item me-2">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-link" : "")" asp-controller="Home" asp-action="Index">
+                                    <i class="fa-solid fa-house me-1 opacity-75"></i> Trang chủ
+                                </a>
                             </li>
                         }
-                        <li class="nav-item me-3">
-                            <a class="nav-link text-primary fw-bold" asp-controller="Bookings" asp-action="Calendar">
-                                <i class="fa-regular fa-calendar-days me-1"></i>Lịch Phòng
+                        <li class="nav-item me-2">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Calendar" ? "active-link" : "")" asp-controller="Bookings" asp-action="Calendar">
+                                <i class="fa-regular fa-calendar-days me-1 opacity-75"></i> Lịch Phòng
                             </a>
                         </li>
                     </ul>
 
-                    <ul class="navbar-nav align-items-center">
+                    <ul class="navbar-nav align-items-sm-center gap-2">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item me-3">
+                            <li class="nav-item">
                                 @if (User.IsInRole("Admin"))
                                 {
-                                    <span class="nav-link fw-bold text-dark border px-3 rounded-pill bg-light shadow-sm">
-                                        <i class="fa-solid fa-user-shield text-primary me-1 fs-5 align-middle"></i>
-                                        @User.Identity.Name
+                                    <span class="user-badge-nav d-inline-block shadow-sm">
+                                        <i class="fa-solid fa-user-shield text-warning me-1"></i> @User.Identity.Name
                                     </span>
                                 }
                                 else
                                 {
-                                    <a class="nav-link fw-bold text-dark btn btn-light px-3 shadow-sm border" style="border-radius: 20px;" asp-controller="Bookings" asp-action="Dashboard">
-                                        <i class="fa-solid fa-user-circle text-primary me-1 fs-5 align-middle"></i>
-                                        @User.Identity.Name
+                                    <a class="user-badge-nav d-inline-block text-decoration-none shadow-sm" asp-controller="Bookings" asp-action="Dashboard">
+                                        <i class="fa-solid fa-circle-user me-1"></i> @User.Identity.Name
                                     </a>
                                 }
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-bold btn btn-outline-danger btn-sm px-3" style="border-radius: 20px;" asp-controller="Account" asp-action="Logout">
-                                    <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                                <a class="btn btn-light text-danger btn-sm px-3 rounded-pill fw-semibold shadow-sm" asp-controller="Account" asp-action="Logout">
+                                    <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Đăng xuất
                                 </a>
                             </li>
                         }
                         else
                         {
-                            <li class="nav-item me-3"><a class="nav-link text-dark fw-bold" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
-                            <li class="nav-item"><a class="nav-link fw-bold btn-register" asp-controller="Account" asp-action="Register">Đăng ký</a></li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn-register-nav text-decoration-none d-inline-block" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                            </li>
                         }
                     </ul>
                 </div>
@@ -131,34 +219,37 @@
         </nav>
     </header>
 
-    @if (User.IsInRole("Admin"))
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    }
+
+    @if (User.IsInRole("Admin") && currentController != "Home")
     {
-        <div class="container-fluid px-4 pb-5">
+        <div class="container-fluid px-lg-5 px-3 py-4 flex-grow-1">
             <div class="row">
                 <!-- SIDEBAR BÊN TRÁI -->
                 <div class="col-lg-2 col-md-3 mb-4">
-                    <nav class="bg-white shadow-sm rounded-4 p-4 admin-sidebar h-100">
-                        <h6 class="text-uppercase text-muted fw-bold mb-4 px-2 fs-6" style="letter-spacing: 1px;">Danh mục quản lý</h6>
+                    <nav class="admin-sidebar-box h-100">
+                        <h6 class="text-uppercase fw-bold mb-4 px-2" style="letter-spacing: 0.8px; color: #94a3b8; font-size: 0.75rem;">Menu Quản lý</h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link fw-bold text-dark" asp-controller="Bookings" asp-action="AdminDashboard">
-                                    <i class="fa-solid fa-chart-pie me-3 text-center text-primary" style="width: 25px;"></i>Thống kê
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AdminDashboard" ? "active" : "")" asp-controller="Bookings" asp-action="AdminDashboard">
+                                    <i class="fa-solid fa-chart-pie me-3" style="width: 20px;"></i>Thống kê
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-bold text-dark" asp-controller="Rooms" asp-action="Index">
-                                    <i class="fa-solid fa-layer-group me-3 text-center text-primary" style="width: 25px;"></i>Quản lý Phòng
-                                </a>
-                            </li>
-                            <!-- ĐÃ THÊM MỤC QUẢN LÝ THIẾT BỊ VÀO ĐÂY -->
-                            <li class="nav-item">
-                                <a class="nav-link fw-bold text-dark" asp-controller="Facilities" asp-action="Index">
-                                    <i class="fa-solid fa-plug me-3 text-center text-warning" style="width: 25px;"></i>Quản lý Thiết bị
+                                <a class="nav-link @(currentController == "Rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Index">
+                                    <i class="fa-solid fa-layer-group me-3" style="width: 20px;"></i>Phòng
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-bold text-dark" asp-controller="Bookings" asp-action="ManageBookings">
-                                    <i class="fa-solid fa-clipboard-check me-3 text-center text-danger" style="width: 25px;"></i>Duyệt Đơn
+                                <a class="nav-link @(currentController == "Facilities" ? "active" : "")" asp-controller="Facilities" asp-action="Index">
+                                    <i class="fa-solid fa-plug me-3" style="width: 20px;"></i>Thiết bị
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageBookings" ? "active" : "")" asp-controller="Bookings" asp-action="ManageBookings">
+                                    <i class="fa-solid fa-clipboard-check me-3" style="width: 20px;"></i>Duyệt Đơn
                                 </a>
                             </li>
                         </ul>
@@ -169,14 +260,14 @@
                 <main class="col-lg-10 col-md-9 px-md-4">
                     @if (TempData["Success"] != null)
                     {
-                        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px; border-left: 5px solid #198754;">
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 12px; border-left: 5px solid #10b981; background-color: #ecfdf5; color: #065f46;">
                             <i class="fa-solid fa-circle-check me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Success"]</span>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
                     @if (TempData["Error"] != null)
                     {
-                        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px; border-left: 5px solid #dc3545;">
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 12px; border-left: 5px solid #ef4444; background-color: #fef2f2; color: #991b1b;">
                             <i class="fa-solid fa-triangle-exclamation me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Error"]</span>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
@@ -189,18 +280,19 @@
     }
     else
     {
-        <div class="container pb-5">
+        <!-- GIAO DIỆN BÌNH THƯỜNG -->
+        <div class="container px-3 py-4 flex-grow-1">
             <main role="main">
                 @if (TempData["Success"] != null)
                 {
-                    <div class="alert alert-success alert-dismissible fade show shadow-sm mt-3" role="alert" style="border-radius: 10px; border-left: 5px solid #198754;">
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm mb-3" role="alert" style="border-radius: 12px; border-left: 5px solid #10b981; background-color: #ecfdf5; color: #065f46;">
                         <i class="fa-solid fa-circle-check me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Success"]</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
                 @if (TempData["Error"] != null)
                 {
-                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mt-3" role="alert" style="border-radius: 10px; border-left: 5px solid #dc3545;">
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert" style="border-radius: 12px; border-left: 5px solid #ef4444; background-color: #fef2f2; color: #991b1b;">
                         <i class="fa-solid fa-triangle-exclamation me-2 fs-5 align-middle"></i><span class="fw-medium">@TempData["Error"]</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -211,13 +303,51 @@
         </div>
     }
 
-    <footer class="border-top footer text-muted bg-white mt-auto py-4">
-        <div class="container text-center">&copy; 2026 - T-Booking System</div>
+    <!-- FOOTER ĐƠN GIẢN, LỊCH SỰ -->
+    <footer class="footer-clean mt-auto">
+        <div class="container text-center">
+            <div class="mb-2">
+                &copy; 2026 <strong>T-Booking</strong> - Hệ thống quản lý đặt phòng và thiết bị trực tuyến
+            </div>
+            <div class="small text-muted">
+                Phát triển bởi <strong class="text-primary">HUFLIT</strong> &bull; Hỗ trợ: <a href="mailto:letai75652@gmail.com" class="text-decoration-none text-muted">letai75652@gmail.com</a> &bull; Giờ mở cửa: 07:00 - 21:30
+            </div>
+        </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- AI CHAT BOX HỖ TRỢ ĐẶT PHÒNG & THIẾT BỊ (GÓC DƯỚI BÊN PHẢI) -->
+    @await Html.PartialAsync("_AiChatBox")
+
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 9999">
+            <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 16px; overflow: hidden;">
+                <div class="toast-header bg-primary text-white border-0 py-3">
+                    <i class="fa-solid fa-bell me-2 fs-5"></i>
+                    <strong class="me-auto fs-6">Hệ thống T-Booking</strong>
+                    <small class="opacity-75">Vừa xong</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body fs-6 fw-medium text-dark bg-white p-4" id="toastMessage">
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+        <script>
+            const connection = new signalR.HubConnectionBuilder().withUrl("/notificationHub").build();
+            connection.on("ReceiveNotification", function (message) {
+                document.getElementById("toastMessage").innerText = message;
+                const toast = new bootstrap.Toast(document.getElementById('liveToast'), { autohide: true, delay: 8000 });
+                toast.show();
+            });
+            connection.start().catch(err => console.error("Lỗi SignalR: " + err.toString()));
+        </script>
+    }
 </body>
 </html>

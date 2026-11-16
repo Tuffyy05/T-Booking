@@ -19,6 +19,14 @@ namespace WebApplication1.Controllers
         // Bổ sung tham số để nhận dữ liệu từ form tìm kiếm
         public async Task<IActionResult> Index(string searchString, string roomType, int? minCapacity)
         {
+            // =========================================================================
+            // [MỚI] NẾU LÀ ADMIN, CHUYỂN HƯỚNG THẲNG SANG TRANG THỐNG KÊ (ADMINDASHBOARD)
+            // =========================================================================
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+            {
+                return RedirectToAction("AdminDashboard", "Bookings");
+            }
+
             // 1. Khởi tạo Query lấy danh sách phòng
             var roomsQuery = _context.Rooms.AsQueryable();
 
@@ -39,7 +47,25 @@ namespace WebApplication1.Controllers
 
             if (!string.IsNullOrEmpty(roomType))
             {
-                roomsQuery = roomsQuery.Where(r => r.RoomType == roomType);
+                var rtTrim = roomType.Trim();
+                var rtLower = rtTrim.ToLower();
+
+                if (rtLower.Contains("hội trường") || rtLower == "hall")
+                {
+                    roomsQuery = roomsQuery.Where(r => r.RoomType.ToLower().Contains("hall") || r.RoomType.ToLower().Contains("hội trường") || r.Name.ToLower().Contains("hội trường"));
+                }
+                else if (rtLower.Contains("họp") || rtLower == "meeting")
+                {
+                    roomsQuery = roomsQuery.Where(r => r.RoomType.ToLower().Contains("meeting") || r.RoomType.ToLower().Contains("họp") || r.Name.ToLower().Contains("phòng họp"));
+                }
+                else if (rtLower.Contains("lab"))
+                {
+                    roomsQuery = roomsQuery.Where(r => r.RoomType.ToLower().Contains("lab") || r.Name.ToLower().Contains("lab"));
+                }
+                else
+                {
+                    roomsQuery = roomsQuery.Where(r => r.RoomType.ToLower() == rtLower || r.RoomType.Contains(rtTrim));
+                }
             }
 
             if (minCapacity.HasValue && minCapacity > 0)

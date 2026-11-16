@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
+using WebApplication1.Hubs;
 using WebApplication1.Models;
+using WebApplication1.Services; // Cần dùng EmailService
+using QRCoder; // [MỚI] Thêm thư viện tạo mã QR
 
 namespace WebApplication1.Controllers
 {
@@ -10,10 +14,15 @@ namespace WebApplication1.Controllers
     public class BookingsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<NotificationHub> _hubContext; // SignalR Hub
+        private readonly EmailService _emailService; // Gửi Email tự động
 
-        public BookingsController(ApplicationDbContext context)
+        // [SỬA LỖI] CHỈ CÓ DUY NHẤT 1 CONSTRUCTOR nhận cả 3 tham số
+        public BookingsController(ApplicationDbContext context, IHubContext<NotificationHub> hubContext, EmailService emailService)
         {
             _context = context;
+            _hubContext = hubContext;
+            _emailService = emailService;
         }
 
         // 1. Mở giao diện điền giờ đặt phòng
@@ -51,7 +60,7 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> Create(Booking booking, List<int> selectedFacilities)
         {
             // Lấy ID của người đang đăng nhập
-            var username = User.Identity.Name;
+            var username = User.Identity!.Name;
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (currentUser == null) return Unauthorized();
 
@@ -114,6 +123,11 @@ namespace WebApplication1.Controllers
                     await _context.SaveChangesAsync(); // Lưu thông tin thiết bị đã mượn
                 }
 
+                // ==========================================
+                // BẮN THÔNG BÁO SIGNALR LÊN CHỈ CHO ADMIN
+                // ==========================================
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Có đơn đặt phòng mới từ user '{username}' vào lúc {booking.StartTime.ToString("HH:mm")}");
+
                 TempData["Success"] = "Gửi yêu cầu đặt phòng kèm thiết bị thành công! Đang chờ duyệt.";
 
                 // Đổi lệnh chuyển hướng về thẳng Trang chủ (HomeController, hàm Index)
@@ -131,14 +145,14 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> MyBookings()
         {
-            var username = User.Identity.Name;
+            var username = User.Identity!.Name;
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (currentUser == null) return Unauthorized();
 
             var myBookings = await _context.Bookings
                 .Include(b => b.Room)
-                .Include(b => b.BookingFacilities) // Load danh sách thiết bị mượn
+                .Include(b => b.BookingFacilities!)
                     .ThenInclude(bf => bf.Facility) // Load chi tiết tên thiết bị
                 .Where(b => b.UserId == currentUser.Id)
                 .OrderByDescending(b => b.CreatedAt)
@@ -150,7 +164,7 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            var username = User.Identity.Name;
+            var username = User.Identity!.Name;
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (currentUser == null) return Unauthorized();
@@ -158,7 +172,7 @@ namespace WebApplication1.Controllers
             // Lấy luôn danh sách lịch sử đặt phòng để truyền sang giao diện
             var myBookings = await _context.Bookings
                 .Include(b => b.Room)
-                .Include(b => b.BookingFacilities)
+                .Include(b => b.BookingFacilities!)
                     .ThenInclude(bf => bf.Facility) // Đính kèm luôn thiết bị vào trang Dashboard
                 .Where(b => b.UserId == currentUser.Id)
                 .OrderByDescending(b => b.CreatedAt)
@@ -180,7 +194,7 @@ namespace WebApplication1.Controllers
             var allBookings = await _context.Bookings
                 .Include(b => b.Room)
                 .Include(b => b.User)
-                .Include(b => b.BookingFacilities)
+                .Include(b => b.BookingFacilities!)
                     .ThenInclude(bf => bf.Facility) // Admin cũng thấy được khách mượn thiết bị nào
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
@@ -193,12 +207,29 @@ namespace WebApplication1.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Approve(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            // Cần Include User và Room để lấy email và tên phòng
+            var booking = await _context.Bookings.Include(b => b.User).Include(b => b.Room).FirstOrDefaultAsync(b => b.Id == id);
             if (booking != null)
             {
                 booking.Status = "Approved";
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã DUYỆT đơn đặt phòng thành công!";
+
+                // ==========================================
+                // BẮN EMAIL TỰ ĐỘNG KHI DUYỆT ĐƠN
+                // ==========================================
+                try
+                {
+                    string subject = "✅ Yêu cầu đặt phòng đã được duyệt!";
+                    string body = $"Chào {booking.User!.Username},<br><br>Đơn đặt phòng <b>{booking.Room!.Name}</b> của bạn vào lúc <b>{booking.StartTime:dd/MM/yyyy HH:mm}</b> đã được Admin phê duyệt.<br>Vui lòng đến đúng giờ để nhận phòng.<br><br>Trân trọng,<br>T-Booking Admin";
+
+                    await _emailService.SendEmailAsync(booking.User.Email, subject, body);
+                }
+                catch (Exception ex)
+                {
+                    // Nếu gửi email lỗi, vẫn duyệt đơn thành công nhưng báo lỗi nhẹ
+                    TempData["Error"] = $"Duyệt thành công nhưng không thể gửi Email: {ex.Message}";
+                }
             }
             return RedirectToAction(nameof(ManageBookings));
         }
@@ -208,12 +239,27 @@ namespace WebApplication1.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _context.Bookings.Include(b => b.User).Include(b => b.Room).FirstOrDefaultAsync(b => b.Id == id);
             if (booking != null)
             {
                 booking.Status = "Rejected";
                 await _context.SaveChangesAsync();
                 TempData["Error"] = "Đã TỪ CHỐI đơn đặt phòng!";
+
+                // ==========================================
+                // BẮN EMAIL TỰ ĐỘNG KHI TỪ CHỐI ĐƠN
+                // ==========================================
+                try
+                {
+                    string subject = "❌ Yêu cầu đặt phòng bị từ chối";
+                    string body = $"Chào {booking.User!.Username},<br><br>Rất tiếc, đơn đặt phòng <b>{booking.Room!.Name}</b> của bạn vào lúc <b>{booking.StartTime:dd/MM/yyyy HH:mm}</b> đã bị Admin từ chối.<br>Vui lòng liên hệ ban quản lý để biết thêm chi tiết.<br><br>Trân trọng,<br>T-Booking Admin";
+
+                    await _emailService.SendEmailAsync(booking.User.Email, subject, body);
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = $"Từ chối thành công nhưng không thể gửi Email: {ex.Message}";
+                }
             }
             return RedirectToAction(nameof(ManageBookings));
         }
@@ -287,6 +333,25 @@ namespace WebApplication1.Controllers
             ViewBag.RoomCounts = roomData.Select(r => r.Count).ToArray();
 
             return View();
+        }
+
+        // ========================================================
+        // [MỚI] HÀM TẠO MÃ QR CODE
+        // ========================================================
+        [HttpGet]
+        [Authorize]
+        public IActionResult GenerateQRCode(string qrText)
+        {
+            // Tạo mã QR từ chuỗi văn bản truyền vào
+            using QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q);
+
+            // Xuất ra định dạng PNG dạng mảng byte
+            using PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+            byte[] qrCodeImage = qrCode.GetGraphic(20);
+
+            // Trả về file ảnh
+            return File(qrCodeImage, "image/png");
         }
     }
 }
