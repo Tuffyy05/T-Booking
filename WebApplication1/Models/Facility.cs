@@ -13,7 +13,7 @@ namespace WebApplication1.Models
         public string Name { get; set; }
 
         [Display(Name = "Mô tả / Thông số")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Display(Name = "Số lượng")]
         public int Quantity { get; set; } = 1;
