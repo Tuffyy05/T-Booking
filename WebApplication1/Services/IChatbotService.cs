@@ -4,6 +4,6 @@ namespace WebApplication1.Services
 {
     public interface IChatbotService
     {
-        Task<ChatResponseDto> GetResponseAsync(string userMessage);
+        Task<ChatResponseDto> GetResponseAsync(string userMessage, string? currentUsername = null);
     }
 }

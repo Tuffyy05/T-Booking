@@ -31,7 +31,8 @@ namespace WebApplication1.Controllers
 
             try
             {
-                var response = await _chatbotService.GetResponseAsync(request.Message);
+                var username = User.Identity?.IsAuthenticated == true ? User.Identity.Name : null;
+                var response = await _chatbotService.GetResponseAsync(request.Message, username);
                 return Json(response);
             }
             catch (Exception ex)
