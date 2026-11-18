@@ -602,7 +602,7 @@ namespace WebApplication1.Services
                             Success = true,
                             Reply = $"📋 **Lịch sử đặt phòng ({user.Username}):**\n\n" +
                                     "Hiện tại bạn **chưa có đơn đặt phòng nào** trong hệ thống T-Booking.\n\n" +
-                                    "👉 Bạn có thể xem lịch phòng trống tại **[Lịch Đặt Phòng](/Bookings/Calendar)** hoặc cho tôi biết ngày/giờ bạn cần để tôi gợi ý phòng phù hợp ngay nhé!",
+                                    "🔗 Bạn có thể xem lịch phòng trống và tạo đơn mới tại trang **[Lịch Đặt Phòng](/Bookings/Calendar)** nhé!",
                             QuickSuggestions = new List<string> { "Kiểm tra phòng trống hôm nay", "Phòng họp cho 20 người", "Hướng dẫn đặt phòng" }
                         };
                     }
@@ -613,16 +613,11 @@ namespace WebApplication1.Services
             return new ChatResponseDto
             {
                 Success = true,
-                Reply = "📋 **Hướng dẫn xem Lịch sử đặt phòng & Đơn của bạn:**\n\n" +
-                        "Để xem danh sách các đơn đã đặt, theo dõi trạng thái duyệt và xuất trình mã QR nhận phòng:\n\n" +
-                        "1️⃣ **Bước 1:** Đăng nhập vào tài khoản của bạn tại trang **[Đăng nhập](/Account/Login)**.\n" +
-                        "2️⃣ **Bước 2:** Bấm vào tên tài khoản ở thanh menu trên cùng và chọn mục **[Đơn của tôi](/Bookings/MyBookings)** hoặc **[Trang cá nhân (Dashboard)](/Bookings/Dashboard)**.\n\n" +
-                        "💡 **Ý nghĩa các trạng thái đơn:**\n" +
-                        "• 🟡 **Chờ duyệt (Pending):** Đơn đang chờ Quản trị viên phê duyệt.\n" +
-                        "• 🟢 **Đã duyệt (Approved):** Đơn đã thành công! Hệ thống hiển thị ảnh **Mã QR nhận phòng**, bạn chỉ cần xuất trình cho quản trị viên quét check-in.\n" +
-                        "• 🔴 **Từ chối (Rejected):** Đơn không được phê duyệt.\n\n" +
-                        "👉 Nếu bạn muốn đặt phòng mới, hãy cho tôi biết thời gian hoặc số người bạn cần nhé!",
-                QuickSuggestions = new List<string> { "Xem Đơn của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
+                Reply = "⚠️ **Bạn chưa đăng nhập vào hệ thống!**\n\n" +
+                        "Vì lý do bảo mật và quyền riêng tư, bạn **cần đăng nhập tài khoản** thì mới có thể xem được lịch sử đặt phòng của mình.\n\n" +
+                        "👉 Vui lòng **[Bấm vào đây để Đăng nhập](/Account/Login)**.\n\n" +
+                        "💡 *Sau khi đăng nhập, bạn có thể quay lại đây hỏi tôi để xem nhanh các đơn đã đặt, hoặc truy cập trực tiếp mục **[Đơn của tôi](/Bookings/MyBookings)** để xem chi tiết và lấy mã QR nhận phòng nhé!*",
+                QuickSuggestions = new List<string> { "Đăng nhập tài khoản", "Quy trình nhận phòng mã QR", "Hướng dẫn đặt phòng" }
             };
         }
 

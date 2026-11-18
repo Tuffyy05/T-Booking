@@ -687,6 +687,7 @@
             try {
                 const response = await fetch("/Chat/Ask", {
                     method: "POST",
+                    credentials: "same-origin",
                     headers: {
                         "Content-Type": "application/json"
                     },
