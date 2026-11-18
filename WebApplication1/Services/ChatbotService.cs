@@ -99,16 +99,22 @@ namespace WebApplication1.Services
                 return BuildOutOfScopeResponse();
             }
 
-            // C. Nhận diện các yếu tố: Khung giờ, Ngày, Sức chứa, Loại phòng
-            var (hasTime, startTime, endTime, dateDesc, timeDesc) = ParseDateTimeRange(rawMessage);
-            var (hasCapacity, requestedCapacity) = ParseCapacity(rawMessage);
-            var roomTypeFilter = ParseRoomType(lower, unaccented);
+            // C0. Khách hỏi về Đăng nhập / Đăng ký / Tài khoản
+            if (IsAccountQuery(lower, unaccented))
+            {
+                return HandleAccountQuery(currentUsername);
+            }
 
-            // D0. Khách hỏi xem Lịch sử đặt phòng / Đơn đặt phòng của tôi
+            // C1. Khách hỏi xem Lịch đặt phòng / Lịch sử đặt phòng / Đơn của tôi
             if (IsBookingHistoryQuery(lower, unaccented))
             {
                 return await HandleBookingHistoryQueryAsync(currentUsername);
             }
+
+            // C2. Nhận diện các yếu tố: Khung giờ, Ngày, Sức chứa, Loại phòng
+            var (hasTime, startTime, endTime, dateDesc, timeDesc) = ParseDateTimeRange(rawMessage);
+            var (hasCapacity, requestedCapacity) = ParseCapacity(rawMessage);
+            var roomTypeFilter = ParseRoomType(lower, unaccented);
 
             // D. Khách hỏi kiểm tra phòng trống (hoặc có khung giờ cụ thể)
             bool isAskingAvailability = lower.Contains("trống") || lower.Contains("rảnh") || lower.Contains("con phong") ||
@@ -150,14 +156,16 @@ namespace WebApplication1.Services
                 return await HandleRoomInfoQueryAsync(roomTypeFilter);
             }
 
-            // Mặc định hỗ trợ chung
+            // Mặc định hỗ trợ chung: Trả lời rõ ràng, đúng trọng tâm phạm vi hỗ trợ
             return new ChatResponseDto
             {
                 Success = true,
-                Reply = "Tôi đã ghi nhận câu hỏi của bạn về hệ thống T-Booking. Bạn có thể cho tôi biết rõ hơn:\n" +
-                        "1. Bạn muốn đặt phòng vào **ngày nào và khung giờ nào** (ví dụ: *từ 8h đến 10h ngày mai*)?\n" +
-                        "2. Bạn cần phòng cho **bao nhiêu người** (ví dụ: *phòng cho 30 người*)?\n" +
-                        "3. Hoặc bạn cần tìm **loại phòng** (Lab, Họp, Hội trường) hay **thiết bị** nào?",
+                Reply = "Tôi chưa hiểu rõ câu hỏi của bạn. Tôi là AI Trợ lý hỗ trợ hệ thống đặt phòng T-Booking. Bạn vui lòng đặt câu hỏi theo các nội dung sau:\n\n" +
+                        "• 🔍 **Tra cứu phòng trống:** Ví dụ: *'Kiểm tra phòng trống hôm nay'* hoặc *'Từ 8h đến 10h ngày mai còn phòng không?'*\n" +
+                        "• 👥 **Tìm phòng theo sức chứa:** Ví dụ: *'Tìm phòng cho 30 người'*\n" +
+                        "• 📽️ **Tra cứu thiết bị:** Ví dụ: *'Phòng hội trường có máy chiếu không?'*\n" +
+                        "• 📋 **Xem lịch đặt phòng của bạn:** Gõ *'Lịch đặt phòng của tôi'* *(Yêu cầu đã đăng nhập)*\n" +
+                        "• 🎫 **Quy trình nhận phòng:** Gõ *'Duyệt đơn xong thì nhận phòng thế nào?'*",
                 QuickSuggestions = GetDefaultQuickSuggestions()
             };
         }
@@ -541,6 +549,34 @@ namespace WebApplication1.Services
             };
         }
 
+        private ChatResponseDto HandleAccountQuery(string? currentUsername)
+        {
+            if (!string.IsNullOrEmpty(currentUsername))
+            {
+                return new ChatResponseDto
+                {
+                    Success = true,
+                    Reply = $"👤 **Tài khoản của bạn:**\n\n" +
+                            $"Bạn hiện đang đăng nhập với tài khoản: **{currentUsername}**.\n\n" +
+                            $"• 📊 Quản lý tài khoản & đổi mật khẩu: vào **[Trang cá nhân (Dashboard)](/Bookings/Dashboard)**.\n" +
+                            $"• 📋 Xem lịch đặt phòng của bạn: vào **[Đơn của tôi](/Bookings/MyBookings)**.\n" +
+                            $"• 🚪 Để đăng xuất: bấm nút **Đăng xuất** ở góc trên màn hình.",
+                    QuickSuggestions = new List<string> { "Lịch đặt phòng của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
+                };
+            }
+
+            return new ChatResponseDto
+            {
+                Success = true,
+                Reply = "🔑 **Đăng nhập & Tài khoản T-Booking:**\n\n" +
+                        "Để sử dụng tính năng đặt phòng và xem lịch đặt phòng cá nhân, bạn vui lòng truy cập:\n\n" +
+                        "👉 **[Bấm vào đây để Đăng Nhập](/Account/Login)**\n\n" +
+                        "• Nếu bạn chưa có tài khoản: **[Bấm vào đây để Đăng Ký](/Account/Register)**.\n" +
+                        "• Sau khi đăng nhập, hệ thống sẽ tự động cập nhật lịch đặt phòng và mã QR của riêng bạn!",
+                QuickSuggestions = new List<string> { "Lịch đặt phòng của tôi", "Hướng dẫn đặt phòng", "Kiểm tra phòng trống hôm nay" }
+            };
+        }
+
         private async Task<ChatResponseDto> HandleBookingHistoryQueryAsync(string? currentUsername)
         {
             if (!string.IsNullOrEmpty(currentUsername))
@@ -560,8 +596,8 @@ namespace WebApplication1.Services
                     if (myBookings.Any())
                     {
                         var sb = new StringBuilder();
-                        sb.AppendLine($"📋 **Lịch sử đặt phòng của bạn ({user.Username}):**\n");
-                        sb.AppendLine($"Dưới đây là **{myBookings.Count} đơn đặt phòng gần nhất** của bạn:\n");
+                        sb.AppendLine($"📋 **Lịch đặt phòng của tài khoản {user.Username}:**\n");
+                        sb.AppendLine($"Dưới đây là các đơn đặt phòng của bạn trên hệ thống:\n");
 
                         foreach (var b in myBookings)
                         {
@@ -581,18 +617,18 @@ namespace WebApplication1.Services
                             if (b.BookingFacilities != null && b.BookingFacilities.Any())
                             {
                                 var facList = string.Join(", ", b.BookingFacilities.Select(bf => $"{bf.Facility?.Name} (x{bf.Quantity})"));
-                                sb.AppendLine($"  🔌 **Thiết bị mượn kèm:** {facList}");
+                                sb.AppendLine($"  🔌 **Thiết bị:** {facList}");
                             }
                             sb.AppendLine();
                         }
 
-                        sb.AppendLine("🔗 Bạn có thể xem toàn bộ lịch sử chi tiết và mở ảnh mã QR nhận phòng tại mục **[Đơn của tôi](/Bookings/MyBookings)** hoặc **[Trang cá nhân (Dashboard)](/Bookings/Dashboard)**.");
+                        sb.AppendLine("🔗 Xem chi tiết và mở ảnh mã QR nhận phòng tại mục **[Đơn của tôi](/Bookings/MyBookings)**.");
 
                         return new ChatResponseDto
                         {
                             Success = true,
                             Reply = sb.ToString().Trim(),
-                            QuickSuggestions = new List<string> { "Đơn của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
+                            QuickSuggestions = new List<string> { "Lịch đặt phòng của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
                         };
                     }
                     else
@@ -600,24 +636,23 @@ namespace WebApplication1.Services
                         return new ChatResponseDto
                         {
                             Success = true,
-                            Reply = $"📋 **Lịch sử đặt phòng ({user.Username}):**\n\n" +
-                                    "Hiện tại bạn **chưa có đơn đặt phòng nào** trong hệ thống T-Booking.\n\n" +
-                                    "🔗 Bạn có thể xem lịch phòng trống và tạo đơn mới tại trang **[Lịch Đặt Phòng](/Bookings/Calendar)** nhé!",
+                            Reply = $"📋 **Lịch đặt phòng của tài khoản {user.Username}:**\n\n" +
+                                    "Hiện tại tài khoản của bạn **chưa có đơn đặt phòng nào** trong hệ thống T-Booking.\n\n" +
+                                    "🔗 Bạn có thể xem lịch phòng trống và tạo đơn mới tại trang **[Lịch Đặt Phòng](/Bookings/Calendar)**.",
                             QuickSuggestions = new List<string> { "Kiểm tra phòng trống hôm nay", "Phòng họp cho 20 người", "Hướng dẫn đặt phòng" }
                         };
                     }
                 }
             }
 
-            // Trường hợp khách chưa đăng nhập hoặc không xác định được tài khoản
+            // Trường hợp khách chưa đăng nhập: Nêu rõ ràng lý do chưa đăng nhập và dẫn link đăng nhập
             return new ChatResponseDto
             {
                 Success = true,
                 Reply = "⚠️ **Bạn chưa đăng nhập vào hệ thống!**\n\n" +
-                        "Vì lý do bảo mật và quyền riêng tư, bạn **cần đăng nhập tài khoản** thì mới có thể xem được lịch sử đặt phòng của mình.\n\n" +
-                        "👉 Vui lòng **[Bấm vào đây để Đăng nhập](/Account/Login)**.\n\n" +
-                        "💡 *Sau khi đăng nhập, bạn có thể quay lại đây hỏi tôi để xem nhanh các đơn đã đặt, hoặc truy cập trực tiếp mục **[Đơn của tôi](/Bookings/MyBookings)** để xem chi tiết và lấy mã QR nhận phòng nhé!*",
-                QuickSuggestions = new List<string> { "Đăng nhập tài khoản", "Quy trình nhận phòng mã QR", "Hướng dẫn đặt phòng" }
+                        "Hệ thống chỉ có thể hiển thị lịch đặt phòng khi bạn đã đăng nhập vào tài khoản của mình.\n\n" +
+                        "👉 Vui lòng **[Bấm vào đây để Đăng nhập](/Account/Login)** để xem lịch đặt phòng của bạn nhé!",
+                QuickSuggestions = new List<string> { "Đăng nhập tài khoản", "Hướng dẫn đặt phòng", "Kiểm tra phòng trống hôm nay" }
             };
         }
 
@@ -637,7 +672,8 @@ namespace WebApplication1.Services
                 "muon phong", "mượn phòng", "thiet bi", "thiết bị", "ma qr", "mã qr", "qrcode", "check in", "checkin",
                 "lich phong", "lịch phòng", "phong hop", "phòng họp", "hoi truong", "hội trường", "phong lab", "phòng lab",
                 "duyet xong", "duyệt xong", "lay phong", "lấy phòng",
-                "lich su", "lịch sử", "don cua toi", "đơn của tôi", "don dat phong", "đơn đặt phòng", "da dat", "đã đặt", "trang thai don", "trạng thái đơn"
+                "lich su", "lịch sử", "don cua toi", "đơn của tôi", "don dat phong", "đơn đặt phòng", "da dat", "đã đặt", "trang thai don", "trạng thái đơn",
+                "dang nhap", "đăng nhập", "dang ky", "đăng ký", "tai khoan", "tài khoản", "lich dat phong", "lịch đặt phòng", "lich dat", "lịch đặt", "login", "register"
             };
 
             foreach (var core in coreDomainWords)
@@ -731,16 +767,35 @@ namespace WebApplication1.Services
             return greetings.Any(g => lower.StartsWith(g) || unaccented.StartsWith(g) || lower == g || unaccented == g);
         }
 
+        private bool IsAccountQuery(string lower, string unaccented)
+        {
+            string[] accWords = {
+                "dang nhap tai khoan", "đăng nhập tài khoản",
+                "dang nhap", "đăng nhập",
+                "login", "tai khoan", "tài khoản",
+                "dang ky tai khoan", "đăng ký tài khoản",
+                "dang ky", "đăng ký", "register", "signup", "sign up", "sign in",
+                "quen mat khau", "quên mật khẩu",
+                "doi mat khau", "đổi mật khẩu",
+                "dang xuat", "đăng xuất", "logout"
+            };
+            return accWords.Any(w => lower.Contains(w) || unaccented.Contains(w));
+        }
+
         private bool IsBookingHistoryQuery(string lower, string unaccented)
         {
             string[] historyWords = {
                 "lich su dat phong", "lịch sử đặt phòng",
+                "lich dat phong cua toi", "lịch đặt phòng của tôi",
+                "lich dat phong", "lịch đặt phòng",
+                "lich dat", "lịch đặt",
                 "lich su", "lịch sử",
                 "don cua toi", "đơn của tôi",
                 "don dat phong", "đơn đặt phòng",
                 "don dat", "đơn đặt",
                 "cac phong toi da dat", "các phòng tôi đã đặt",
                 "phong da dat", "phòng đã đặt",
+                "phong cua toi", "phòng của tôi",
                 "da dat nhung phong nao", "đã đặt những phòng nào",
                 "toi da dat", "tôi đã đặt",
                 "kiem tra don dat phong", "kiểm tra đơn đặt phòng",
@@ -750,7 +805,8 @@ namespace WebApplication1.Services
                 "xem don", "xem đơn",
                 "don cua minh", "đơn của mình",
                 "trang thai don", "trạng thái đơn",
-                "don da duyet chua", "đơn đã duyệt chưa"
+                "don da duyet chua", "đơn đã duyệt chưa",
+                "lich cua toi", "lịch của tôi"
             };
             return historyWords.Any(w => lower.Contains(w) || unaccented.Contains(w));
         }
