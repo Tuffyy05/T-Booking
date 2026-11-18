@@ -120,19 +120,25 @@ namespace WebApplication1.Services
                 return await HandleCapacityQueryAsync(requestedCapacity, roomTypeFilter);
             }
 
-            // F. Khách hỏi về Thiết bị (Facility)
+            // F. Khách hỏi về Nhận phòng / Mã QR Check-in / Sau khi đơn được duyệt (TC_AI_04)
+            if (IsCheckInOrQrQuery(lower, unaccented))
+            {
+                return HandleCheckInQuery();
+            }
+
+            // G. Khách hỏi về Thiết bị (Facility)
             if (IsFacilityQuery(lower, unaccented))
             {
                 return await HandleFacilityQueryAsync(lower, unaccented);
             }
 
-            // G. Khách hỏi về Hướng dẫn / Quy trình đặt phòng
+            // H. Khách hỏi về Hướng dẫn / Quy trình đặt phòng
             if (IsBookingGuideQuery(lower, unaccented))
             {
                 return HandleBookingGuideQuery();
             }
 
-            // H. Khách hỏi danh sách / thông tin phòng
+            // I. Khách hỏi danh sách / thông tin phòng
             if (IsRoomInfoQuery(lower, unaccented))
             {
                 return await HandleRoomInfoQueryAsync(roomTypeFilter);
@@ -507,19 +513,58 @@ namespace WebApplication1.Services
             };
         }
 
+        private ChatResponseDto HandleCheckInQuery()
+        {
+            var reply = "🎫 **Hướng dẫn quy trình Nhận phòng (Check-in bằng mã QR):**\n\n" +
+                        "Sau khi đơn đặt phòng của bạn được Quản trị viên duyệt (**Approved**), bạn thực hiện nhận phòng theo các bước sau:\n\n" +
+                        "1️⃣ **Bước 1: Lấy Mã QR Nhận Phòng**\n" +
+                        "   • Đăng nhập vào hệ thống và bấm vào tên tài khoản của bạn để vào **Trang cá nhân (Dashboard)** hoặc mục **[Đơn của tôi](/Bookings/MyBookings)**.\n" +
+                        "   • Tại dòng đơn đặt phòng đã duyệt, bạn sẽ thấy ảnh **Mã QR nhận phòng** tương ứng.\n\n" +
+                        "2️⃣ **Bước 2: Phóng to & Xuất trình Mã QR**\n" +
+                        "   • Nhấp vào ảnh mã QR nhỏ để phóng to rõ nét trên màn hình điện thoại hoặc máy tính.\n\n" +
+                        "3️⃣ **Bước 3: Quét mã xác nhận nhận phòng**\n" +
+                        "   • Đưa mã QR cho Quản trị viên / Cán bộ quản lý phòng quét bằng **Camera Zalo** hoặc ứng dụng **Camera điện thoại**.\n" +
+                        "   • Hệ thống sẽ tự động đối chiếu thông tin Mã đơn, Tên phòng và bàn giao phòng học/hội trường cho bạn ngay lập tức!\n\n" +
+                        "💡 *Lưu ý: Chỉ những đơn đã được duyệt (Approved) mới hiển thị mã QR. Đơn ở trạng thái Chờ duyệt (Pending) sẽ không có mã QR.*";
+
+            return new ChatResponseDto
+            {
+                Success = true,
+                Reply = reply,
+                QuickSuggestions = new List<string> { "Xem lịch sử đặt phòng", "Hướng dẫn đặt phòng", "Kiểm tra phòng trống hôm nay" }
+            };
+        }
+
         #endregion
 
         #region Out-of-Scope & Domain Check
 
         private bool IsExplicitlyOutOfScope(string message)
         {
-            var lower = " " + message.ToLowerInvariant() + " ";
-            var unaccented = " " + RemoveDiacritics(lower) + " ";
+            var lower = " " + message.ToLowerInvariant().Trim() + " ";
+            var unaccented = " " + RemoveDiacritics(lower).Trim() + " ";
+
+            // BẢO VỆ CỐT LÕI: Nếu câu hỏi chứa bất kỳ từ khóa nghiệp vụ nào của hệ thống -> KHÔNG BAO GIỜ bị chặn
+            string[] coreDomainWords = new[]
+            {
+                "nhan phong", "nhận phòng", "duyet don", "duyệt đơn", "dat phong", "đặt phòng",
+                "muon phong", "mượn phòng", "thiet bi", "thiết bị", "ma qr", "mã qr", "qrcode", "check in", "checkin",
+                "lich phong", "lịch phòng", "phong hop", "phòng họp", "hoi truong", "hội trường", "phong lab", "phòng lab",
+                "duyet xong", "duyệt xong", "lay phong", "lấy phòng"
+            };
+
+            foreach (var core in coreDomainWords)
+            {
+                if (lower.Contains(core) || unaccented.Contains(RemoveDiacritics(core)))
+                {
+                    return false;
+                }
+            }
 
             string[] outOfScopePhrases = new[]
             {
-                "thời tiết", "thoi tiet", "trời mưa", "troi mua", "trời nắng", "troi nang", "nhiệt độ", "nhiet do", "dự báo", "du bao",
-                "nấu ăn", "nau an", "công thức", "cong thuc", "món ăn", "mon an", "quán ăn", "quan an", "bún bò", "bun bo", "cơm tấm", "com tam", "ăn phở", "an pho", "nấu phở", "nau pho",
+                "thời tiết", "thoi tiet", "trời mưa", "troi mua", "trời nắng", "troi nang", "nhiệt độ", "nhiet do", "dự báo thời tiết",
+                "nấu ăn", "nau an", "công thức nấu", "món ăn", "mon an", "quán ăn", "quan an", "bún bò", "bun bo", "cơm tấm", "com tam", "ăn phở", "nau pho",
                 "viết code", "viet code", "lập trình", "lap trinh", "python", "javascript", "c++", "java", "sql query",
                 "giải toán", "giai toan", "bài tập", "bai tap", "phương trình", "phuong trinh", "tích phân", "tich phan", "hóa học", "hoa hoc",
                 "dịch tiếng", "dich tieng", "dịch câu", "dich cau", "translate",
@@ -534,7 +579,10 @@ namespace WebApplication1.Services
 
             foreach (var phrase in outOfScopePhrases)
             {
-                if (lower.Contains(phrase) || unaccented.Contains(RemoveDiacritics(phrase)))
+                var pPadded = " " + phrase.Trim() + " ";
+                var pUnaccented = " " + RemoveDiacritics(phrase.Trim()) + " ";
+
+                if (lower.Contains(pPadded) || unaccented.Contains(pUnaccented))
                 {
                     return true;
                 }
@@ -548,6 +596,7 @@ namespace WebApplication1.Services
             string[] domainKeywords = new[]
             {
                 "phòng", "phong", "room", "đặt", "dat", "book", "mượn", "muon", "thuê", "thue",
+                "nhận", "nhan", "lấy", "lay", "check in", "checkin", "check-in", "qr", "qrcode", "mã", "ma",
                 "lịch", "lich", "trống", "trong", "rảnh", "ranh", "kín", "kin", "chỗ", "cho",
                 "người", "nguoi", "sức chứa", "suc chua", "chứa", "chua", "giờ", "gio",
                 "hôm nay", "hom nay", "ngày mai", "ngay mai", "mốt", "mot", "kia",
@@ -592,6 +641,19 @@ namespace WebApplication1.Services
         {
             string[] greetings = { "xin chao", "chao", "hello", "hi", "hey", "halo", "alo", "ban la ai", "ai day", "ai do", "giup", "help" };
             return greetings.Any(g => lower.StartsWith(g) || unaccented.StartsWith(g) || lower == g || unaccented == g);
+        }
+
+        private bool IsCheckInOrQrQuery(string lower, string unaccented)
+        {
+            string[] checkInWords = {
+                "nhan phong", "nhận phòng", "lay phong", "lấy phòng", "nhan lai phong",
+                "check in", "checkin", "check-in",
+                "ma qr", "mã qr", "qrcode", "quet qr", "quét qr", "hien thi qr", "hiển thị qr",
+                "duyet don xong", "duyệt đơn xong", "duyet xong", "duyệt xong",
+                "lam sao de vao phong", "làm sao để vào phòng", "vao phong nhu the nao", "vào phòng như thế nào",
+                "cach nhan phong", "cách nhận phòng", "nhan chia khoa", "nhận chìa khóa"
+            };
+            return checkInWords.Any(w => lower.Contains(w) || unaccented.Contains(w));
         }
 
         private bool IsFacilityQuery(string lower, string unaccented)
