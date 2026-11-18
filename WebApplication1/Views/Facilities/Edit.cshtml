@@ -1,9 +1,16 @@
 ﻿@model WebApplication1.Models.Facility
 @{
     ViewData["Title"] = "Chỉnh sửa thiết bị";
+    var rooms = ViewBag.Rooms as List<WebApplication1.Models.Room> ?? new List<WebApplication1.Models.Room>();
+    var selectedIds = ViewBag.SelectedRoomIds as List<int> ?? (Model.RoomId.HasValue ? new List<int> { Model.RoomId.Value } : new List<int>());
+    var isShared = !Model.RoomId.HasValue;
+
+    var hallRooms = rooms.Where(r => r.RoomType == "Hall").ToList();
+    var meetingRooms = rooms.Where(r => r.RoomType == "Meeting").ToList();
+    var labRooms = rooms.Where(r => r.RoomType == "Lab").ToList();
 }
 
-<div class="container-fluid mt-2" style="max-width: 700px;">
+<div class="container-fluid mt-2" style="max-width: 900px;">
     <!-- TIÊU ĐỀ TRANG -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -11,11 +18,11 @@
                 <i class="fa-solid fa-pen-to-square me-2"></i>Chỉnh Sửa Thiết Bị
             </h3>
             <p class="text-muted mb-0" style="font-size: 0.95rem;">
-                Cập nhật thông tin, số lượng và phòng trực thuộc của thiết bị.
+                Cập nhật thông tin và phân bổ thiết bị cho 1 phòng, 2 phòng hội trường hoặc kết hợp hội trường & phòng họp...
             </p>
         </div>
         <a asp-action="Index" class="btn btn-light border rounded-pill px-4 shadow-sm text-secondary fw-semibold">
-            <i class="fa-solid fa-arrow-left me-1"></i>Quay lại
+            <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
         </a>
     </div>
 
@@ -25,51 +32,198 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
 
-                <div asp-validation-summary="All" class="alert alert-danger rounded-3 shadow-sm mb-4"></div>
+                <!-- KHỐI BÁO LỖI (CHỈ HIỂN THỊ KHI CÓ LỖI THỰC TẾ) -->
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div asp-validation-summary="All" class="alert alert-danger rounded-3 shadow-sm mb-4"></div>
+                }
 
-                <div class="mb-3">
-                    <label asp-for="Name" class="form-label fw-bold text-dark">
-                        Tên thiết bị <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-laptop"></i></span>
-                        <input asp-for="Name" class="form-control bg-light border-start-0" required />
+                <div class="row g-3 mb-4">
+                    <!-- TÊN THIẾT BỊ -->
+                    <div class="col-12 col-md-8">
+                        <label asp-for="Name" class="form-label fw-bold text-dark">
+                            Tên thiết bị <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-laptop"></i></span>
+                            <input asp-for="Name" class="form-control bg-light border-start-0" required />
+                        </div>
+                        <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
                     </div>
-                    <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
-                </div>
 
-                <div class="mb-3">
-                    <label asp-for="Description" class="form-label fw-bold text-dark">Mô tả / Thông số kỹ thuật</label>
-                    <textarea asp-for="Description" class="form-control bg-light" rows="2"></textarea>
-                    <span asp-validation-for="Description" class="text-danger small mt-1 d-block"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Quantity" class="form-label fw-bold text-dark">
-                        Số lượng <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-hashtag"></i></span>
-                        <input asp-for="Quantity" class="form-control bg-light border-start-0" type="number" min="1" required />
+                    <!-- SỐ LƯỢNG CHO MỖI PHÒNG -->
+                    <div class="col-12 col-md-4">
+                        <label asp-for="Quantity" class="form-label fw-bold text-dark">
+                            Số lượng mỗi phòng <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-hashtag"></i></span>
+                            <input asp-for="Quantity" class="form-control bg-light border-start-0" type="number" min="1" required />
+                        </div>
+                        <span asp-validation-for="Quantity" class="text-danger small mt-1 d-block"></span>
                     </div>
-                    <span asp-validation-for="Quantity" class="text-danger small mt-1 d-block"></span>
+
+                    <!-- MÔ TẢ -->
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-bold text-dark">Mô tả / Thông số kỹ thuật</label>
+                        <textarea asp-for="Description" class="form-control bg-light" rows="2" placeholder="Ví dụ: Máy chiếu Full HD, kết nối HDMI..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small mt-1 d-block"></span>
+                    </div>
                 </div>
 
+                <hr class="my-4 text-muted opacity-25" />
+
+                <!-- PHẠM VI PHÂN BỔ THIẾT BỊ (CHỌN NHIỀU PHÒNG) -->
                 <div class="mb-4">
-                    <label asp-for="RoomId" class="form-label fw-bold text-dark">Phòng trực thuộc</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-door-open"></i></span>
-                        <select asp-for="RoomId" class="form-select bg-light border-start-0" asp-items="ViewBag.RoomId">
-                            <option value="">-- Kho dùng chung / Tự do --</option>
-                        </select>
+                    <label class="form-label fw-bold text-dark mb-2">
+                        <i class="fa-solid fa-sitemap text-primary me-2"></i>Phạm vi phân bổ thiết bị
+                    </label>
+
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        <div class="form-check form-check-inline p-3 border rounded-3 bg-light flex-grow-1" style="cursor: pointer;" onclick="document.getElementById('allocRooms').checked = true; toggleAllocation('rooms');">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="allocationType" id="allocRooms" value="rooms" @(!isShared ? "checked" : "") onchange="toggleAllocation('rooms')">
+                            <label class="form-check-label fw-bold text-dark" for="allocRooms" style="cursor: pointer;">
+                                <i class="fa-solid fa-door-open text-primary me-1"></i> Gán vào các phòng cụ thể
+                                <span class="text-muted fw-normal d-block small mt-1">Chọn 1 phòng hoặc tích chọn nhiều phòng (2 Hội trường, Hội trường + Phòng họp...)</span>
+                            </label>
+                        </div>
+
+                        <div class="form-check form-check-inline p-3 border rounded-3 bg-light flex-grow-1" style="cursor: pointer;" onclick="document.getElementById('allocShared').checked = true; toggleAllocation('shared');">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="allocationType" id="allocShared" value="shared" @(isShared ? "checked" : "") onchange="toggleAllocation('shared')">
+                            <label class="form-check-label fw-bold text-dark" for="allocShared" style="cursor: pointer;">
+                                <i class="fa-solid fa-boxes-stacked text-warning me-1"></i> Kho dùng chung / Tự do
+                                <span class="text-muted fw-normal d-block small mt-1">Không gán cố định cho phòng nào</span>
+                            </label>
+                        </div>
                     </div>
-                    <small class="text-muted mt-1 d-block">
-                        <i class="fa-solid fa-info-circle me-1"></i>Hệ thống tự động kiểm tra trùng lặp nếu phòng được chọn đã có thiết bị cùng tên.
-                    </small>
+
+                    <!-- KHỐI CHỌN CÁC PHÒNG (MULTI-SELECT CHECKBOXES THEO NHÓM) -->
+                    <div id="roomSelectionSection" class="p-3 border rounded-3 bg-white shadow-sm" style="display: @(isShared ? "none" : "block");">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+                            <div>
+                                <span class="fw-bold text-dark"><i class="fa-solid fa-check-double text-success me-1"></i>Chọn các phòng tiếp nhận thiết bị:</span>
+                                <small class="text-muted d-block">Bạn có thể chọn cùng lúc 2 Hội trường, 1 Hội trường + 1 Phòng họp, hoặc bất kỳ phòng nào</small>
+                            </div>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="selectAllRooms(true)">
+                                    Chọn tất cả
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="selectAllRooms(false)">
+                                    Bỏ chọn tất cả
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 1. NHÓM HỘI TRƯỜNG -->
+                        @if (hallRooms.Any())
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-success" style="font-size: 0.88rem;">
+                                        <i class="fa-solid fa-landmark me-1"></i>Hội trường Sự kiện (@hallRooms.Count phòng)
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-light border py-0 px-2 small rounded-pill text-success" onclick="selectGroupRooms('hall-checkbox', true)">
+                                        Chọn cả 2 Hội trường
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var room in hallRooms)
+                                    {
+                                        var isChecked = selectedIds.Contains(room.Id);
+                                        <div class="col-12 col-sm-6">
+                                            <label class="d-flex align-items-center p-2 px-3 border rounded-3 h-100 room-card @(isChecked ? "selected-room" : "")" style="cursor: pointer; transition: all 0.2s ease;">
+                                                <input type="checkbox" name="selectedRoomIds" value="@room.Id" class="form-check-input me-2 room-checkbox hall-checkbox" @(isChecked ? "checked" : "") onchange="updateCardStyle(this)" />
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold text-dark" style="font-size: 0.92rem;">@room.Name</div>
+                                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-2" style="font-size: 0.7rem;">Hội trường lớn</span>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">@room.Capacity chỗ</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 2. NHÓM PHÒNG HỌP -->
+                        @if (meetingRooms.Any())
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-warning text-dark" style="font-size: 0.88rem;">
+                                        <i class="fa-solid fa-users-rectangle me-1 text-warning"></i>Phòng Họp & Hội thảo (@meetingRooms.Count phòng)
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-light border py-0 px-2 small rounded-pill text-secondary" onclick="selectGroupRooms('meeting-checkbox', true)">
+                                        Chọn tất cả Phòng họp
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var room in meetingRooms)
+                                    {
+                                        var isChecked = selectedIds.Contains(room.Id);
+                                        <div class="col-12 col-sm-6 col-md-4">
+                                            <label class="d-flex align-items-center p-2 px-3 border rounded-3 h-100 room-card @(isChecked ? "selected-room" : "")" style="cursor: pointer; transition: all 0.2s ease;">
+                                                <input type="checkbox" name="selectedRoomIds" value="@room.Id" class="form-check-input me-2 room-checkbox meeting-checkbox" @(isChecked ? "checked" : "") onchange="updateCardStyle(this)" />
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold text-dark" style="font-size: 0.92rem;">@room.Name</div>
+                                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2" style="font-size: 0.7rem;">Phòng họp</span>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">@room.Capacity chỗ</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 3. NHÓM PHÒNG LAB -->
+                        @if (labRooms.Any())
+                        {
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-primary" style="font-size: 0.88rem;">
+                                        <i class="fa-solid fa-desktop me-1"></i>Phòng Lab Máy tính (@labRooms.Count phòng)
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-light border py-0 px-2 small rounded-pill text-primary" onclick="selectGroupRooms('lab-checkbox', true)">
+                                        Chọn tất cả Lab
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var room in labRooms)
+                                    {
+                                        var isChecked = selectedIds.Contains(room.Id);
+                                        <div class="col-12 col-sm-6 col-md-4">
+                                            <label class="d-flex align-items-center p-2 px-3 border rounded-3 h-100 room-card @(isChecked ? "selected-room" : "")" style="cursor: pointer; transition: all 0.2s ease;">
+                                                <input type="checkbox" name="selectedRoomIds" value="@room.Id" class="form-check-input me-2 room-checkbox lab-checkbox" @(isChecked ? "checked" : "") onchange="updateCardStyle(this)" />
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold text-dark" style="font-size: 0.92rem;">@room.Name</div>
+                                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2" style="font-size: 0.7rem;">Lab Máy tính</span>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">@room.Capacity máy</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="alert alert-info rounded-3 py-2 px-3 small mb-0 mt-3 d-flex align-items-center">
+                            <i class="fa-solid fa-shield-halved text-primary fs-5 me-2"></i>
+                            <div>
+                                <strong>Gán & nhân bản tự động:</strong> Nếu bạn chọn từ 2 phòng trở lên, hệ thống sẽ tự động cập nhật cho phòng đầu tiên và nhân bản thiết bị sang các phòng tiếp theo, đồng thời tự động bỏ qua nếu phòng đó đã có sẵn thiết bị này.
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                    <a asp-action="Index" class="btn btn-light border rounded-pill px-4 text-secondary">Hủy</a>
+                    <a asp-action="Index" class="btn btn-light border rounded-pill px-4 text-secondary">Hủy bỏ</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm">
                         <i class="fa-solid fa-check me-2"></i>Lưu thay đổi
                     </button>
@@ -79,8 +233,57 @@
     </div>
 </div>
 
+<style>
+    .validation-summary-valid, .validation-summary-errors:empty {
+        display: none !important;
+    }
+    .room-card:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+    }
+    .room-card.selected-room {
+        background-color: #eff6ff !important;
+        border-color: #3b82f6 !important;
+    }
+</style>
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        function toggleAllocation(type) {
+            const section = document.getElementById('roomSelectionSection');
+            if (type === 'shared') {
+                section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+            }
+        }
+
+        function updateCardStyle(checkbox) {
+            const card = checkbox.closest('.room-card');
+            if (checkbox.checked) {
+                card.classList.add('selected-room');
+            } else {
+                card.classList.remove('selected-room');
+            }
+        }
+
+        function selectAllRooms(select) {
+            const checkboxes = document.querySelectorAll('.room-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = select;
+                updateCardStyle(cb);
+            });
+        }
+
+        function selectGroupRooms(className, select) {
+            const checkboxes = document.querySelectorAll('.' + className);
+            checkboxes.forEach(cb => {
+                cb.checked = select;
+                updateCardStyle(cb);
+            });
+        }
+    </script>
 }

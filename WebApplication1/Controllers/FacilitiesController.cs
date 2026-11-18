@@ -33,12 +33,12 @@ namespace WebApplication1.Controllers
         // GET: Facilities/Create
         public async Task<IActionResult> Create()
         {
-            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.Name).ToListAsync();
+            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
             return View();
         }
 
         // POST: Facilities/Create
-        // Hỗ trợ thêm cùng một thiết bị cho 2, 3 phòng (hoặc nhiều phòng) cùng lúc
+        // Hỗ trợ thêm cùng một thiết bị cho 2, 3 phòng (hoặc nhiều phòng) cùng lúc (ví dụ: 2 Hội trường, 1 Hội trường + 1 Phòng họp...)
         // Tự động kiểm tra và ngăn chặn thêm trùng thiết bị vào cùng một phòng
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -59,7 +59,6 @@ namespace WebApplication1.Controllers
             // Trường hợp 1: Phân bổ vào Kho dùng chung (Không gán cố định cho phòng nào)
             if (allocationType == "shared")
             {
-                // Kiểm tra trùng trong kho chung
                 var existsInShared = await _context.Facilities.AnyAsync(f =>
                     f.RoomId == null && f.Name.ToLower() == cleanName.ToLower());
 
@@ -124,14 +123,13 @@ namespace WebApplication1.Controllers
                     if (addedRooms.Count == 0 && duplicateRooms.Count > 0)
                     {
                         ModelState.AddModelError("", $"Thiết bị '{cleanName}' đã tồn tại ở tất cả các phòng bạn chọn ({string.Join(", ", duplicateRooms)})! Không thể thêm trùng lặp.");
-                        ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.Name).ToListAsync();
+                        ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
                         ViewBag.SelectedRoomIds = selectedRoomIds;
                         return View(facility);
                     }
 
                     await _context.SaveChangesAsync();
 
-                    // Thông báo chi tiết các phòng đã thêm và phòng đã bị bỏ qua (nếu có)
                     var message = $"Thêm thiết bị '{cleanName}' (SL: {facility.Quantity}) thành công cho {addedRooms.Count} phòng: {string.Join(", ", addedRooms)}!";
                     if (duplicateRooms.Count > 0)
                     {
@@ -143,7 +141,7 @@ namespace WebApplication1.Controllers
                 }
             }
 
-            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.Name).ToListAsync();
+            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
             ViewBag.SelectedRoomIds = selectedRoomIds;
             return View(facility);
         }
@@ -156,15 +154,16 @@ namespace WebApplication1.Controllers
             var facility = await _context.Facilities.FindAsync(id);
             if (facility == null) return NotFound();
 
-            ViewData["RoomId"] = new SelectList(await _context.Rooms.OrderBy(r => r.Name).ToListAsync(), "Id", "Name", facility.RoomId);
+            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
+            ViewBag.SelectedRoomIds = facility.RoomId.HasValue ? new List<int> { facility.RoomId.Value } : new List<int>();
             return View(facility);
         }
 
         // POST: Facilities/Edit/5
-        // Chống đổi tên hoặc đổi phòng làm trùng thiết bị trong cùng phòng
+        // Hỗ trợ cập nhật thiết bị hiện tại và có thể gán / sao chép cho nhiều phòng cùng lúc (ví dụ chọn 2 hội trường hoặc 1 hội trường, 1 phòng họp...)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Quantity,RoomId")] Facility facility)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Quantity")] Facility facility, List<int>? selectedRoomIds, string allocationType = "rooms")
         {
             if (id != facility.Id) return NotFound();
 
@@ -180,42 +179,112 @@ namespace WebApplication1.Controllers
                 ModelState.AddModelError("Quantity", "Số lượng thiết bị phải lớn hơn 0!");
             }
 
-            if (ModelState.IsValid)
+            var existingFacility = await _context.Facilities.FindAsync(id);
+            if (existingFacility == null) return NotFound();
+
+            if (allocationType == "shared")
             {
-                // Kiểm tra trùng lặp với thiết bị khác trong cùng phòng (hoặc trong kho chung)
-                var isDuplicate = await _context.Facilities.AnyAsync(f =>
-                    f.Id != facility.Id &&
-                    f.RoomId == facility.RoomId &&
+                var isDuplicateInShared = await _context.Facilities.AnyAsync(f =>
+                    f.Id != id &&
+                    f.RoomId == null &&
                     f.Name.ToLower() == cleanName.ToLower());
 
-                if (isDuplicate)
+                if (isDuplicateInShared)
                 {
-                    var targetLocation = facility.RoomId.HasValue
-                        ? (await _context.Rooms.FindAsync(facility.RoomId.Value))?.Name
-                        : "Kho dùng chung";
-
-                    ModelState.AddModelError("Name", $"Thiết bị '{cleanName}' đã tồn tại trong {targetLocation}! Vui lòng không đặt trùng tên.");
-                    ViewData["RoomId"] = new SelectList(await _context.Rooms.OrderBy(r => r.Name).ToListAsync(), "Id", "Name", facility.RoomId);
-                    return View(facility);
+                    ModelState.AddModelError("Name", $"Thiết bị '{cleanName}' đã tồn tại trong Kho dùng chung! Không thể đặt trùng tên.");
                 }
 
-                try
+                if (ModelState.IsValid)
                 {
-                    facility.Name = cleanName;
-                    facility.Description = facility.Description ?? "";
-                    _context.Update(facility);
+                    existingFacility.Name = cleanName;
+                    existingFacility.Description = facility.Description ?? "";
+                    existingFacility.Quantity = facility.Quantity;
+                    existingFacility.RoomId = null;
+
                     await _context.SaveChangesAsync();
-                    TempData["Success"] = $"Cập nhật thông tin thiết bị '{cleanName}' thành công!";
+                    TempData["Success"] = $"Đã cập nhật thiết bị '{cleanName}' thành Kho dùng chung thành công!";
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+            }
+            else // allocationType == "rooms"
+            {
+                if (selectedRoomIds == null || selectedRoomIds.Count == 0)
                 {
-                    if (!_context.Facilities.Any(e => e.Id == facility.Id)) return NotFound();
-                    else throw;
+                    ModelState.AddModelError("", "Vui lòng chọn ít nhất một phòng trực thuộc hoặc chuyển sang chế độ 'Kho dùng chung'!");
                 }
-                return RedirectToAction(nameof(Index));
+
+                if (ModelState.IsValid && selectedRoomIds != null && selectedRoomIds.Count > 0)
+                {
+                    // Phòng đầu tiên được chọn sẽ cập nhật cho bản ghi hiện tại
+                    var primaryRoomId = selectedRoomIds[0];
+                    var primaryRoom = await _context.Rooms.FindAsync(primaryRoomId);
+
+                    // Kiểm tra trùng trong phòng đầu tiên với thiết bị KHÁC
+                    var isDupInPrimary = await _context.Facilities.AnyAsync(f =>
+                        f.Id != id &&
+                        f.RoomId == primaryRoomId &&
+                        f.Name.ToLower() == cleanName.ToLower());
+
+                    if (isDupInPrimary)
+                    {
+                        ModelState.AddModelError("", $"Thiết bị '{cleanName}' đã có trong {primaryRoom?.Name}! Vui lòng không đặt trùng tên.");
+                        ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
+                        ViewBag.SelectedRoomIds = selectedRoomIds;
+                        return View(facility);
+                    }
+
+                    existingFacility.Name = cleanName;
+                    existingFacility.Description = facility.Description ?? "";
+                    existingFacility.Quantity = facility.Quantity;
+                    existingFacility.RoomId = primaryRoomId;
+
+                    var addedRooms = new List<string> { primaryRoom?.Name ?? $"Phòng #{primaryRoomId}" };
+                    var skippedRooms = new List<string>();
+
+                    // Nếu người dùng chọn thêm các phòng khác (phòng thứ 2, thứ 3...) -> Nhân bản thiết bị sang các phòng đó
+                    for (int i = 1; i < selectedRoomIds.Count; i++)
+                    {
+                        var extraRoomId = selectedRoomIds[i];
+                        var extraRoom = await _context.Rooms.FindAsync(extraRoomId);
+                        if (extraRoom == null) continue;
+
+                        var extraDup = await _context.Facilities.AnyAsync(f =>
+                            f.RoomId == extraRoomId &&
+                            f.Name.ToLower() == cleanName.ToLower());
+
+                        if (extraDup)
+                        {
+                            skippedRooms.Add(extraRoom.Name);
+                        }
+                        else
+                        {
+                            var extraFacility = new Facility
+                            {
+                                Name = cleanName,
+                                Description = facility.Description ?? "",
+                                Quantity = facility.Quantity,
+                                RoomId = extraRoomId
+                            };
+                            _context.Facilities.Add(extraFacility);
+                            addedRooms.Add(extraRoom.Name);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    var msg = $"Cập nhật thiết bị '{cleanName}' thành công cho {addedRooms.Count} phòng: {string.Join(", ", addedRooms)}!";
+                    if (skippedRooms.Count > 0)
+                    {
+                        msg += $" (Bỏ qua các phòng đã có sẵn: {string.Join(", ", skippedRooms)})";
+                    }
+
+                    TempData["Success"] = msg;
+                    return RedirectToAction(nameof(Index));
+                }
             }
 
-            ViewData["RoomId"] = new SelectList(await _context.Rooms.OrderBy(r => r.Name).ToListAsync(), "Id", "Name", facility.RoomId);
+            ViewBag.Rooms = await _context.Rooms.OrderBy(r => r.RoomType).ThenBy(r => r.Name).ToListAsync();
+            ViewBag.SelectedRoomIds = selectedRoomIds;
             return View(facility);
         }
 
