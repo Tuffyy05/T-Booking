@@ -97,9 +97,9 @@ namespace WebApplication1.Controllers
             // ========================================================
             // PHÂN LUỒNG CHUYỂN HƯỚNG TỰ ĐỘNG SAU KHI ĐĂNG NHẬP
             // ========================================================
-            if (user.Role == "Admin")
+            if (user.Role == "Admin" || user.Role == "Manager")
             {
-                // Nếu là Admin, vào thẳng trang Thống kê (Dashboard)
+                // Nếu là Admin hoặc Manager, vào thẳng trang Thống kê (Dashboard)
                 return RedirectToAction("AdminDashboard", "Bookings");
             }
             else
@@ -113,6 +113,18 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Index", "Home");
+        }
+
+        // Xử lý khi bị từ chối truy cập (Access Denied)
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            TempData["Error"] = "Bạn không có quyền thực hiện thao tác hoặc truy cập vào trang này!";
+            if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+            {
+                return RedirectToAction("AdminDashboard", "Bookings");
+            }
             return RedirectToAction("Index", "Home");
         }
 

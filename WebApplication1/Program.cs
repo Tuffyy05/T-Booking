@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
-// Thêm thư mục Hubs của bạn
 using WebApplication1.Hubs;
-// Thêm thư mục Services
 using WebApplication1.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,11 +22,38 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
 // 3. Cấu hình bảo mật bằng Cookie
-builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login"; // Nếu chưa đăng nhập, tự động đẩy về trang này
         options.AccessDeniedPath = "/Account/AccessDenied"; // Nếu không đủ quyền
+        options.Events = new CookieAuthenticationEvents
+        {
+            // Tự động đồng bộ quyền hạn (Role) từ Database vào Cookie theo thời gian thực
+            OnValidatePrincipal = async context =>
+            {
+                var username = context.Principal?.Identity?.Name;
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == username);
+                    if (user != null)
+                    {
+                        var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role);
+                        if (roleClaim == null || roleClaim.Value != user.Role)
+                        {
+                            var identity = (ClaimsIdentity)context.Principal!.Identity!;
+                            if (roleClaim != null)
+                            {
+                                identity.RemoveClaim(roleClaim);
+                            }
+                            identity.AddClaim(new Claim(ClaimTypes.Role, user.Role));
+                            context.ShouldRenew = true;
+                        }
+                    }
+                }
+            }
+        };
     });
 
 // 4. Thêm dịch vụ SignalR cho tính năng thông báo Real-time

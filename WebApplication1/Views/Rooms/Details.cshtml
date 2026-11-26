@@ -89,9 +89,12 @@
                                                 <a asp-controller="Facilities" asp-action="Edit" asp-route-id="@fac.Id" class="btn btn-sm btn-light border rounded-circle text-warning me-1 shadow-sm" title="Sửa">
                                                     <i class="fa-solid fa-pen"></i>
                                                 </a>
-                                                <a asp-controller="Facilities" asp-action="Delete" asp-route-id="@fac.Id" class="btn btn-sm btn-light border rounded-circle text-danger shadow-sm" title="Xóa">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </a>
+                                                @if (User.IsInRole("Admin"))
+                                                {
+                                                    <a asp-controller="Facilities" asp-action="Delete" asp-route-id="@fac.Id" class="btn btn-sm btn-light border rounded-circle text-danger shadow-sm" title="Xóa">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </a>
+                                                }
                                             </td>
                                         </tr>
                                     }

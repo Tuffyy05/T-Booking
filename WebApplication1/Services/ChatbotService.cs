@@ -108,7 +108,7 @@ namespace WebApplication1.Services
             // C1. Khách hỏi xem Lịch đặt phòng / Lịch sử đặt phòng / Đơn của tôi
             if (IsBookingHistoryQuery(lower, unaccented))
             {
-                return await HandleBookingHistoryQueryAsync(currentUsername);
+                return await HandleBookingHistoryQueryAsync(currentUsername, rawMessage);
             }
 
             // C2. Nhận diện các yếu tố: Khung giờ, Ngày, Sức chứa, Loại phòng
@@ -577,19 +577,87 @@ namespace WebApplication1.Services
             };
         }
 
-        private async Task<ChatResponseDto> HandleBookingHistoryQueryAsync(string? currentUsername)
+        private async Task<ChatResponseDto> HandleBookingHistoryQueryAsync(string? currentUsername, string rawMessage)
         {
             if (!string.IsNullOrEmpty(currentUsername))
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == currentUsername);
                 if (user != null)
                 {
+                    var (hasSpecificDate, targetDate, dateDesc) = ParseFilterDate(rawMessage);
+
+                    // 1. Nếu khách hỏi cụ thể theo ngày (ví dụ: "hôm nay", "ngày mai", "ngày 26/11",...)
+                    if (hasSpecificDate)
+                    {
+                        var dayStart = targetDate.Date;
+                        var dayEnd = dayStart.AddDays(1);
+
+                        var bookingsInDay = await _context.Bookings
+                            .Include(b => b.Room)
+                            .Include(b => b.BookingFacilities!)
+                                .ThenInclude(bf => bf.Facility)
+                            .Where(b => b.UserId == user.Id && b.StartTime < dayEnd && b.EndTime >= dayStart)
+                            .OrderBy(b => b.StartTime)
+                            .ToListAsync();
+
+                        if (bookingsInDay.Any())
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine($"📋 **Lịch đặt phòng của tài khoản {user.Username} ({dateDesc}):**\n");
+                            sb.AppendLine($"Bạn có **{bookingsInDay.Count} lịch đặt phòng** trong ngày:\n");
+
+                            foreach (var b in bookingsInDay)
+                            {
+                                string statusBadge = b.Status switch
+                                {
+                                    "Approved" => "🟢 **Đã duyệt (Approved)** *(Có mã QR nhận phòng)*",
+                                    "Pending" => "🟡 **Chờ duyệt (Pending)**",
+                                    "Rejected" => "🔴 **Bị từ chối (Rejected)**",
+                                    "Cancelled" => "⚫ **Đã hủy (Cancelled)**",
+                                    _ => $"⚪ **{b.Status}**"
+                                };
+
+                                sb.AppendLine($"• **Phòng:** {b.Room.Name} ({b.Room.RoomType})");
+                                sb.AppendLine($"  ⏰ **Thời gian:** {b.StartTime:HH:mm dd/MM/yyyy} ➔ {b.EndTime:HH:mm dd/MM/yyyy}");
+                                sb.AppendLine($"  📌 **Trạng thái:** {statusBadge}");
+
+                                if (b.BookingFacilities != null && b.BookingFacilities.Any())
+                                {
+                                    var facList = string.Join(", ", b.BookingFacilities.Select(bf => $"{bf.Facility?.Name} (x{bf.Quantity})"));
+                                    sb.AppendLine($"  🔌 **Thiết bị:** {facList}");
+                                }
+                                sb.AppendLine();
+                            }
+
+                            sb.AppendLine("🔗 Xem chi tiết và mở ảnh mã QR nhận phòng tại mục **[Đơn của tôi](/Bookings/MyBookings)**.");
+
+                            return new ChatResponseDto
+                            {
+                                Success = true,
+                                Reply = sb.ToString().Trim(),
+                                QuickSuggestions = new List<string> { "Lịch đặt phòng của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
+                            };
+                        }
+                        else
+                        {
+                            return new ChatResponseDto
+                            {
+                                Success = true,
+                                Reply = $"📋 **Lịch đặt phòng của tài khoản {user.Username}:**\n\n" +
+                                        $"Trong **{dateDesc}**, bạn **không có lịch đặt phòng nào** trên hệ thống T-Booking.\n\n" +
+                                        "🔗 Nếu bạn cần mượn phòng, bạn có thể xem lịch phòng trống và tạo đơn mới tại trang **[Lịch Đặt Phòng](/Bookings/Calendar)**.",
+                                QuickSuggestions = new List<string> { "Kiểm tra phòng trống hôm nay", "Phòng họp cho 20 người", "Hướng dẫn đặt phòng" }
+                            };
+                        }
+                    }
+
+                    // 2. Nếu khách hỏi chung chung (không nêu ngày cụ thể): Lấy tối đa 5 đơn gần nhất
                     var myBookings = await _context.Bookings
                         .Include(b => b.Room)
                         .Include(b => b.BookingFacilities!)
                             .ThenInclude(bf => bf.Facility)
                         .Where(b => b.UserId == user.Id)
-                        .OrderByDescending(b => b.CreatedAt)
+                        .OrderByDescending(b => b.StartTime)
                         .Take(5)
                         .ToListAsync();
 
@@ -597,7 +665,7 @@ namespace WebApplication1.Services
                     {
                         var sb = new StringBuilder();
                         sb.AppendLine($"📋 **Lịch đặt phòng của tài khoản {user.Username}:**\n");
-                        sb.AppendLine($"Dưới đây là các đơn đặt phòng của bạn trên hệ thống:\n");
+                        sb.AppendLine($"Dưới đây là các đơn đặt phòng gần nhất của bạn trên hệ thống:\n");
 
                         foreach (var b in myBookings)
                         {
@@ -628,7 +696,7 @@ namespace WebApplication1.Services
                         {
                             Success = true,
                             Reply = sb.ToString().Trim(),
-                            QuickSuggestions = new List<string> { "Lịch đặt phòng của tôi", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
+                            QuickSuggestions = new List<string> { "Lịch đặt phòng hôm nay", "Quy trình nhận phòng mã QR", "Kiểm tra phòng trống hôm nay" }
                         };
                     }
                     else
@@ -806,9 +874,52 @@ namespace WebApplication1.Services
                 "don cua minh", "đơn của mình",
                 "trang thai don", "trạng thái đơn",
                 "don da duyet chua", "đơn đã duyệt chưa",
-                "lich cua toi", "lịch của tôi"
+                "lich cua toi", "lịch của tôi",
+                "lich hom nay", "lịch hôm nay",
+                "toi co lich", "tôi có lịch"
             };
             return historyWords.Any(w => lower.Contains(w) || unaccented.Contains(w));
+        }
+
+        private (bool HasSpecificDate, DateTime TargetDate, string DateDesc) ParseFilterDate(string message)
+        {
+            var lower = message.ToLowerInvariant();
+            var unaccented = RemoveDiacritics(lower);
+
+            if (lower.Contains("hôm nay") || unaccented.Contains("hom nay"))
+            {
+                var today = DateTime.Today;
+                return (true, today, $"Hôm nay ({today:dd/MM/yyyy})");
+            }
+
+            if (Regex.IsMatch(lower, @"\b(?:ngày\s+)?mai\b") || unaccented.Contains("ngay mai"))
+            {
+                var tomorrow = DateTime.Today.AddDays(1);
+                return (true, tomorrow, $"Ngày mai ({tomorrow:dd/MM/yyyy})");
+            }
+
+            if (lower.Contains("ngày mốt") || lower.Contains("mốt") || unaccented.Contains("ngay mot") || lower.Contains("ngày kia") || unaccented.Contains("ngay kia"))
+            {
+                var dayAfter = DateTime.Today.AddDays(2);
+                return (true, dayAfter, $"Ngày mốt ({dayAfter:dd/MM/yyyy})");
+            }
+
+            // Kiểm tra ngày cụ thể: 26/11 hoặc 26/11/2026 hoặc 26-11
+            var dateMatch = Regex.Match(message, @"(?:ngày\s+)?(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{4}))?", RegexOptions.IgnoreCase);
+            if (dateMatch.Success)
+            {
+                int day = int.Parse(dateMatch.Groups[1].Value);
+                int month = int.Parse(dateMatch.Groups[2].Value);
+                int year = dateMatch.Groups[3].Success ? int.Parse(dateMatch.Groups[3].Value) : DateTime.Today.Year;
+
+                if (month >= 1 && month <= 12 && day >= 1 && day <= DateTime.DaysInMonth(year, month))
+                {
+                    var specificDate = new DateTime(year, month, day);
+                    return (true, specificDate, $"Ngày {specificDate:dd/MM/yyyy}");
+                }
+            }
+
+            return (false, DateTime.Today, "");
         }
 
         private bool IsCheckInOrQrQuery(string lower, string unaccented)

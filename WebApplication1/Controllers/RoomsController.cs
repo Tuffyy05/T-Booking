@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace WebApplication1.Controllers
 {
-    // Bắt buộc đăng nhập VÀ phải có quyền Admin
-    [Authorize(Roles = "Admin")]
+    // Bắt buộc đăng nhập VÀ phải có quyền Admin hoặc Manager
+    [Authorize(Roles = "Admin,Manager")]
     public class RoomsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -90,8 +90,9 @@ namespace WebApplication1.Controllers
             return View(room);
         }
 
-        // GET: /Rooms/Delete/5
+        // GET: /Rooms/Delete/5 - Chỉ Admin mới có quyền xóa
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -102,8 +103,9 @@ namespace WebApplication1.Controllers
             return View(room);
         }
 
-        // POST: /Rooms/Delete/5
+        // POST: /Rooms/Delete/5 - Chỉ Admin mới có quyền xóa
         [HttpPost, ActionName("Delete")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

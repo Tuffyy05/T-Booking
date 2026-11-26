@@ -186,9 +186,9 @@ namespace WebApplication1.Controllers
         // KHU VỰC DÀNH RIÊNG CHO ADMIN: QUẢN LÝ VÀ DUYỆT ĐƠN
         // ========================================================
 
-        // 4. Mở trang Quản lý toàn bộ đơn đặt phòng (Chỉ Admin)
+        // 4. Mở trang Quản lý toàn bộ đơn đặt phòng (Admin & Manager)
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> ManageBookings()
         {
             var allBookings = await _context.Bookings
@@ -202,9 +202,9 @@ namespace WebApplication1.Controllers
             return View(allBookings);
         }
 
-        // 5. Chức năng bấm nút DUYỆT đơn (Chỉ Admin)
+        // 5. Chức năng bấm nút DUYỆT đơn (Admin & Manager)
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Approve(int id)
         {
             // Cần Include User và Room để lấy email và tên phòng
@@ -234,9 +234,9 @@ namespace WebApplication1.Controllers
             return RedirectToAction(nameof(ManageBookings));
         }
 
-        // 6. Chức năng bấm nút TỪ CHỐI đơn (Chỉ Admin)
+        // 6. Chức năng bấm nút TỪ CHỐI đơn (Admin & Manager)
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Reject(int id)
         {
             var booking = await _context.Bookings.Include(b => b.User).Include(b => b.Room).FirstOrDefaultAsync(b => b.Id == id);
@@ -301,10 +301,10 @@ namespace WebApplication1.Controllers
         }
 
         // ========================================================
-        // TRANG DASHBOARD THỐNG KÊ DÀNH CHO ADMIN
+        // TRANG DASHBOARD THỐNG KÊ DÀNH CHO ADMIN & MANAGER
         // ========================================================
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> AdminDashboard()
         {
             // 1. Dữ liệu cho các thẻ Tổng quan

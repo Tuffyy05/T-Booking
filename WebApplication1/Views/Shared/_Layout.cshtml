@@ -145,11 +145,11 @@
             <div class="container-fluid px-lg-5 px-3">
 
                 <!-- BRAND LOGO -->
-                @if (User.IsInRole("Admin"))
+                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
                 {
                     <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Bookings" asp-action="AdminDashboard">
                         <div class="logo-icon-box me-2"><i class="fa-solid fa-building-circle-check"></i></div>
-                        <span>T-Booking Admin</span>
+                        <span>T-Booking @(User.IsInRole("Admin") ? "Admin" : "Manager")</span>
                     </a>
                 }
                 else
@@ -166,7 +166,7 @@
 
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav me-auto ms-sm-3 mb-2 mb-sm-0 align-items-sm-center">
-                        @if (!User.IsInRole("Admin"))
+                        @if (!User.IsInRole("Admin") && !User.IsInRole("Manager"))
                         {
                             <li class="nav-item me-2">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active-link" : "")" asp-controller="Home" asp-action="Index">
@@ -188,7 +188,13 @@
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <span class="user-badge-nav d-inline-block shadow-sm">
-                                        <i class="fa-solid fa-user-shield text-warning me-1"></i> @User.Identity.Name
+                                        <i class="fa-solid fa-user-shield text-warning me-1"></i> @User.Identity.Name <small class="badge bg-danger ms-1">Admin</small>
+                                    </span>
+                                }
+                                else if (User.IsInRole("Manager"))
+                                {
+                                    <span class="user-badge-nav d-inline-block shadow-sm">
+                                        <i class="fa-solid fa-user-tie text-warning me-1"></i> @User.Identity.Name <small class="badge bg-warning text-dark ms-1">Manager</small>
                                     </span>
                                 }
                                 else
@@ -223,7 +229,7 @@
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     }
 
-    @if (User.IsInRole("Admin") && currentController != "Home")
+    @if ((User.IsInRole("Admin") || User.IsInRole("Manager")) && currentController != "Home")
     {
         <div class="container-fluid px-lg-5 px-3 py-4 flex-grow-1">
             <div class="row">
@@ -252,11 +258,14 @@
                                     <i class="fa-solid fa-clipboard-check me-3" style="width: 20px;"></i>Duyệt Đơn
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index">
-                                    <i class="fa-solid fa-user-shield me-3" style="width: 20px;"></i>Phân Quyền
-                                </a>
-                            </li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index">
+                                        <i class="fa-solid fa-user-shield me-3" style="width: 20px;"></i>Phân Quyền
+                                    </a>
+                                </li>
+                            }
                         </ul>
                     </nav>
                 </div>
@@ -328,7 +337,7 @@
     <!-- AI CHAT BOX HỖ TRỢ ĐẶT PHÒNG & THIẾT BỊ (GÓC DƯỚI BÊN PHẢI) -->
     @await Html.PartialAsync("_AiChatBox")
 
-    @if (User.IsInRole("Admin"))
+    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
     {
         <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 9999">
             <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 16px; overflow: hidden;">

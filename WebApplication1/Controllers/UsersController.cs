@@ -90,6 +90,17 @@ namespace WebApplication1.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Trang web chỉ có thể có duy nhất 1 Quản trị viên (Admin)
+            if (role == "Admin")
+            {
+                var adminExists = await _context.Users.AnyAsync(u => u.Role == "Admin");
+                if (adminExists)
+                {
+                    TempData["Error"] = "Hệ thống chỉ có thể có duy nhất 1 Quản trị viên (Admin)! Không thể tạo thêm tài khoản Admin mới.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
             var validRoles = new[] { "Admin", "Customer", "Manager" };
             if (string.IsNullOrWhiteSpace(role) || !validRoles.Contains(role))
             {
@@ -136,6 +147,13 @@ namespace WebApplication1.Controllers
             if (user.Username.Equals(currentAdmin, StringComparison.OrdinalIgnoreCase) && newRole != "Admin")
             {
                 TempData["Error"] = "Bạn không thể tự hạ quyền Quản trị viên (Admin) của chính mình!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Kiểm tra: Trang web chỉ có thể có duy nhất 1 Admin, không cho phép nâng quyền người khác lên Admin
+            if (newRole == "Admin" && user.Role != "Admin")
+            {
+                TempData["Error"] = "Hệ thống chỉ cho phép duy nhất 1 tài khoản Quản trị viên (Admin). Bạn không thể cấp quyền Admin cho người khác!";
                 return RedirectToAction(nameof(Index));
             }
 

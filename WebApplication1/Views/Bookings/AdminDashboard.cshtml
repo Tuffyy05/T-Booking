@@ -3,7 +3,7 @@
 }
 
 <div class="container-fluid mt-2">
-    <h2 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-chart-pie me-2"></i>Bảng Điều Khiển Admin</h2>
+    <h2 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-chart-pie me-2"></i>Bảng Điều Khiển @(User.IsInRole("Admin") ? "Admin" : "Quản Lý")</h2>
 
     <!-- 4 THẺ SỐ LIỆU TỔNG QUAN (Đã tăng padding và cỡ chữ) -->
     <div class="row mb-4">

@@ -20,9 +20,9 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> Index(string searchString, string roomType, int? minCapacity)
         {
             // =========================================================================
-            // [MỚI] NẾU LÀ ADMIN, CHUYỂN HƯỚNG THẲNG SANG TRANG THỐNG KÊ (ADMINDASHBOARD)
+            // NẾU LÀ ADMIN HOẶC MANAGER, CHUYỂN HƯỚNG THẲNG SANG TRANG THỐNG KÊ (ADMINDASHBOARD)
             // =========================================================================
-            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+            if (User.Identity != null && User.Identity.IsAuthenticated && (User.IsInRole("Admin") || User.IsInRole("Manager")))
             {
                 return RedirectToAction("AdminDashboard", "Bookings");
             }

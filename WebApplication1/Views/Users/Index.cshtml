@@ -129,8 +129,8 @@
             <span class="fw-bold text-dark fs-6">
                 <i class="fa-solid fa-table-list text-primary me-2"></i>Danh sách người dùng (@Model.Users.Count)
             </span>
-            <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small">
-                Bảo vệ tài khoản quản trị viên tối cao tự động kích hoạt
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 small fw-semibold">
+                <i class="fa-solid fa-shield-halved me-1"></i>Hệ thống giới hạn duy nhất 1 Quản trị viên (Admin)
             </span>
         </div>
         <div class="card-body p-0">
@@ -230,9 +230,12 @@
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@user.Id" />
                                                 <select name="newRole" class="form-select form-select-sm rounded-pill border py-1 ps-3" style="width: 140px; font-size: 0.85rem;">
-                                                    <option value="Admin" selected="@(user.Role == "Admin")">Admin</option>
-                                                    <option value="Manager" selected="@(user.Role == "Manager")">Manager</option>
+                                                    @if (user.Role == "Admin")
+                                                    {
+                                                        <option value="Admin" selected>Admin</option>
+                                                    }
                                                     <option value="Customer" selected="@(user.Role == "Customer")">Customer</option>
+                                                    <option value="Manager" selected="@(user.Role == "Manager")">Manager</option>
                                                 </select>
                                                 <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" title="Lưu phân quyền mới">
                                                     <i class="fa-solid fa-check"></i>
@@ -325,8 +328,14 @@
                         <select name="role" class="form-select bg-light">
                             <option value="Customer">Khách hàng (Customer) - Đặt phòng & thiết bị</option>
                             <option value="Manager">Quản lý (Manager) - Xem & xử lý điều phối</option>
-                            <option value="Admin">Quản trị viên (Admin) - Toàn quyền hệ thống</option>
+                            @if (Model.AdminCount == 0)
+                            {
+                                <option value="Admin">Quản trị viên (Admin) - Toàn quyền hệ thống</option>
+                            }
                         </select>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fa-solid fa-circle-info text-primary me-1"></i>Hệ thống chỉ cho phép duy nhất 1 tài khoản Quản trị viên (Admin).
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0">

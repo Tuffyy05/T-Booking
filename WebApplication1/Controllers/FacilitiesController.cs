@@ -7,7 +7,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
 {
-    [Authorize(Roles = "Admin")] // Chỉ Admin mới được quản lý thiết bị
+    [Authorize(Roles = "Admin,Manager")] // Admin và Manager quản lý thiết bị
     public class FacilitiesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -289,6 +289,7 @@ namespace WebApplication1.Controllers
         }
 
         // GET: Facilities/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -304,6 +305,7 @@ namespace WebApplication1.Controllers
 
         // POST: Facilities/Delete/5
         [HttpPost, ActionName("Delete")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
